@@ -9,8 +9,27 @@ export interface User {
 	updated_at: string
 }
 
+export interface Team {
+	id: string
+	espn_id: string
+	name: string
+	abbreviation: string
+	display_name: string
+	short_display_name: string
+	location: string
+	primary_color: string
+	secondary_color: string
+	logo_url?: string
+	conference: "AFC" | "NFC"
+	division: "East" | "North" | "South" | "West"
+	active: boolean
+	created_at: string
+	updated_at: string
+}
+
 export interface Game {
 	id: string
+	espn_id?: string
 	sport: string
 	season: string
 	week: number
@@ -23,6 +42,27 @@ export interface Game {
 	is_snf: boolean
 	is_mnf: boolean
 	spread?: number
+	created_at: string
+	updated_at: string
+}
+
+export interface EnrichedGame extends Game {
+	home_team_data: Team | null
+	away_team_data: Team | null
+}
+
+export interface Standing {
+	id: string
+	team_id: string
+	season: string
+	conference: "AFC" | "NFC"
+	wins: number
+	losses: number
+	ties: number
+	win_percentage: number
+	points_for: number
+	points_against: number
+	rank: number
 	created_at: string
 	updated_at: string
 }
@@ -56,7 +96,7 @@ export interface Payment {
 	amount_cents: number
 	currency: string
 	status: string
-	payment_type: 'entry_fee' | 'payout' | 'weekly' | 'season'
+	payment_type: "entry_fee" | "payout" | "weekly" | "season"
 	week?: number
 	season?: string
 	created_at: string
@@ -73,9 +113,9 @@ export interface AppConfig {
 }
 
 // Database enums
-export type GameStatus = 'scheduled' | 'live' | 'final' | 'cancelled'
-export type PaymentStatus = 'pending' | 'succeeded' | 'failed' | 'refunded'
-export type PaymentType = 'entry_fee' | 'payout' | 'weekly' | 'season'
+export type GameStatus = "scheduled" | "live" | "final" | "cancelled"
+export type PaymentStatus = "pending" | "succeeded" | "failed" | "refunded"
+export type PaymentType = "entry_fee" | "payout" | "weekly" | "season"
 
 // Extended types for API responses
 export interface GameWithPicks extends Game {

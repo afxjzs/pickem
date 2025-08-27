@@ -22,6 +22,18 @@ export function SignUpForm() {
 		}
 	}, [user, loading, router])
 
+	// Helper function to determine if an error is a user validation error (not logged)
+	const isUserValidationError = (error: string): boolean => {
+		const userErrors = [
+			'Password should be at least',
+			'Email already exists',
+			'Invalid email',
+			'Password is too weak',
+			'Email format is invalid'
+		]
+		return userErrors.some(userError => error.includes(userError))
+	}
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
 		setIsSubmitting(true)
@@ -32,7 +44,10 @@ export function SignUpForm() {
 			const { error } = await signUp(email, password)
 			if (error) {
 				setError(error)
-				console.error("Sign up error:", error)
+				// Only log application errors, not user validation errors
+				if (!isUserValidationError(error)) {
+					console.error("Sign up error:", error)
+				}
 			} else {
 				setSuccess("Account created successfully! Redirecting to dashboard...")
 				// Clear form
@@ -47,6 +62,7 @@ export function SignUpForm() {
 			const errorMessage =
 				error instanceof Error ? error.message : "An unexpected error occurred"
 			setError(errorMessage)
+			// Always log unexpected errors as they indicate application issues
 			console.error("Unexpected error:", error)
 		} finally {
 			setIsSubmitting(false)

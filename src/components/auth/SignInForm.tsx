@@ -21,6 +21,17 @@ export function SignInForm() {
 		}
 	}, [user, loading, router])
 
+	// Helper function to determine if an error is a user validation error (not logged)
+	const isUserValidationError = (error: string): boolean => {
+		const userErrors = [
+			"Invalid credentials",
+			"Email not confirmed",
+			"Invalid email",
+			"User not found",
+		]
+		return userErrors.some((userError) => error.includes(userError))
+	}
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
 		setIsSubmitting(true)
@@ -30,7 +41,10 @@ export function SignInForm() {
 			const { error } = await signIn(email, password)
 			if (error) {
 				setError(error)
-				console.error("Sign in error:", error)
+				// Only log application errors, not user validation errors
+				if (!isUserValidationError(error)) {
+					console.error("Sign in error:", error)
+				}
 			} else {
 				// Success - redirect to dashboard
 				router.push("/dashboard")
@@ -39,6 +53,7 @@ export function SignInForm() {
 			const errorMessage =
 				error instanceof Error ? error.message : "An unexpected error occurred"
 			setError(errorMessage)
+			// Always log unexpected errors as they indicate application issues
 			console.error("Unexpected error:", error)
 		} finally {
 			setIsSubmitting(false)

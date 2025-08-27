@@ -1,0 +1,7 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+1. YOU ARE NEVER ALLOWED TO ATTEMPT TO RUN `supabase db reset`. If you need the database changed, you should create a migration to fix it and then have ME run it. If we MUST, in the very rare occasions where it's actually need to do a fully db reset, you must ask me to do it manually!
+2. We use supabase migrations, no changing the database via direct SQL

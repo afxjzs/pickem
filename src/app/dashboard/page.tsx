@@ -38,6 +38,20 @@ export default function DashboardPage() {
 					<div className="flex justify-between items-center py-6">
 						<h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
 						<div className="flex items-center space-x-4">
+							<nav className="flex items-center space-x-4">
+								<a
+									href="/data"
+									className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100"
+								>
+									NFL Data
+								</a>
+								<a
+									href="/dashboard"
+									className="text-gray-900 bg-gray-100 px-3 py-2 rounded-md text-sm font-medium"
+								>
+									My Picks
+								</a>
+							</nav>
 							<span className="text-gray-700">Welcome, {user.email}</span>
 							<button
 								onClick={handleSignOut}
@@ -55,11 +69,11 @@ export default function DashboardPage() {
 					<div className="border-4 border-dashed border-gray-200 rounded-lg h-96 flex items-center justify-center">
 						<div className="text-center">
 							<h2 className="text-2xl font-semibold text-gray-900 mb-4">
-								Welcome to Pick'em!
+								Welcome to Pick&apos;em!
 							</h2>
 							<p className="text-gray-600 mb-6">
-								You're successfully signed in. This is where you'll make your
-								NFL picks and view standings.
+								You&apos;re successfully signed in. This is where you&apos;ll
+								make your NFL picks and view standings.
 							</p>
 							<div className="space-y-2 text-sm text-gray-500">
 								<p>• Make weekly NFL picks with confidence points</p>

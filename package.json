@@ -16,7 +16,8 @@
 		"test:e2e:ui": "playwright test --ui",
 		"db:migrate": "supabase db push",
 		"db:reset": "supabase db reset",
-		"db:seed": "tsx db/seed.ts"
+		"db:seed": "tsx db/seed.ts",
+		"update-seed": "node scripts/update-seed.js"
 	},
 	"dependencies": {
 		"@supabase/ssr": "^0.1.0",
