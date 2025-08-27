@@ -1,28 +1,45 @@
-'use client'
+"use client"
 
-import React, { useState } from 'react'
-import { useAuth } from '@/lib/contexts/AuthContext'
-import Link from 'next/link'
+import React, { useState, useEffect } from "react"
+import { useAuth } from "@/lib/contexts/AuthContext"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 // Single Responsibility Principle: This component only handles sign-in form logic
 export function SignInForm() {
-	const [email, setEmail] = useState('')
-	const [password, setPassword] = useState('')
+	const [email, setEmail] = useState("")
+	const [password, setPassword] = useState("")
 	const [isSubmitting, setIsSubmitting] = useState(false)
-	const { signIn, loading } = useAuth()
+	const [error, setError] = useState<string | null>(null)
+	const { signIn, loading, user } = useAuth()
+	const router = useRouter()
+
+	// Redirect if already signed in
+	useEffect(() => {
+		if (user && !loading) {
+			router.push("/dashboard")
+		}
+	}, [user, loading, router])
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
 		setIsSubmitting(true)
+		setError(null)
 
 		try {
 			const { error } = await signIn(email, password)
 			if (error) {
-				// Error handling is done in the component state
-				console.error('Sign in error:', error)
+				setError(error)
+				console.error("Sign in error:", error)
+			} else {
+				// Success - redirect to dashboard
+				router.push("/dashboard")
 			}
 		} catch (error) {
-			console.error('Unexpected error:', error)
+			const errorMessage =
+				error instanceof Error ? error.message : "An unexpected error occurred"
+			setError(errorMessage)
+			console.error("Unexpected error:", error)
 		} finally {
 			setIsSubmitting(false)
 		}
@@ -38,15 +55,22 @@ export function SignInForm() {
 						Sign in to your account
 					</h2>
 					<p className="mt-2 text-center text-sm text-gray-600">
-						Or{' '}
+						Or{" "}
 						<Link
-							href="/auth/signup"
-							className="font-medium text-blue-600 hover:text-blue-500"
+							href="/signup"
+							className="font-medium text-blue-500 hover:text-blue-400"
 						>
 							create a new account
 						</Link>
 					</p>
 				</div>
+
+				{error && (
+					<div className="bg-red-50 border border-red-200 rounded-md p-4">
+						<div className="text-sm text-red-600">{error}</div>
+					</div>
+				)}
+
 				<form className="mt-8 space-y-6" onSubmit={handleSubmit}>
 					<div className="rounded-md shadow-sm -space-y-px">
 						<div>
@@ -91,7 +115,7 @@ export function SignInForm() {
 							disabled={isFormDisabled}
 							className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
 						>
-							{isSubmitting ? 'Signing in...' : 'Sign in'}
+							{isSubmitting ? "Signing in..." : "Sign in"}
 						</button>
 					</div>
 				</form>

@@ -1,6 +1,14 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { SignUpForm } from '@/components/auth/SignUpForm'
 
+// Mock next/navigation
+const mockPush = jest.fn()
+jest.mock('next/navigation', () => ({
+	useRouter: () => ({
+		push: mockPush
+	})
+}))
+
 // Mock the auth context
 const mockSignUp = jest.fn()
 const mockUseAuth = jest.fn()
@@ -14,7 +22,8 @@ describe('SignUpForm', () => {
 		jest.clearAllMocks()
 		mockUseAuth.mockReturnValue({
 			signUp: mockSignUp,
-			loading: false
+			loading: false,
+			user: null
 		})
 	})
 
@@ -42,6 +51,10 @@ describe('SignUpForm', () => {
 		await waitFor(() => {
 			expect(mockSignUp).toHaveBeenCalledWith('test@example.com', 'password123')
 		})
+		
+		// Should show success message
+		expect(screen.getByText('Account created successfully! Redirecting to dashboard...')).toBeInTheDocument()
+		// Should redirect after delay (we'll test this with a timer mock if needed)
 	})
 
 	it('should display error message when sign up fails', async () => {
@@ -60,17 +73,36 @@ describe('SignUpForm', () => {
 		await waitFor(() => {
 			expect(mockSignUp).toHaveBeenCalledWith('existing@example.com', 'password123')
 		})
+		
+		// Should show error message
+		expect(screen.getByText('Email already exists')).toBeInTheDocument()
+		// Should not redirect on error
+		expect(mockPush).not.toHaveBeenCalled()
 	})
 
 	it('should disable form submission while loading', () => {
 		mockUseAuth.mockReturnValue({
 			signUp: mockSignUp,
-			loading: true
+			loading: true,
+			user: null
 		})
 
 		render(<SignUpForm />)
 
 		const submitButton = screen.getByRole('button', { name: /sign up/i })
 		expect(submitButton).toBeDisabled()
+	})
+
+	it('should redirect to dashboard if already signed in', () => {
+		mockUseAuth.mockReturnValue({
+			signUp: mockSignUp,
+			loading: false,
+			user: { email: 'test@example.com' }
+		})
+
+		render(<SignUpForm />)
+		
+		// Should redirect immediately
+		expect(mockPush).toHaveBeenCalledWith('/dashboard')
 	})
 })

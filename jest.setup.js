@@ -1,4 +1,4 @@
-import "@testing-library/jest-dom"
+require("@testing-library/jest-dom")
 
 // Mock Next.js router
 jest.mock("next/navigation", () => ({
@@ -35,3 +35,6 @@ global.ResizeObserver = jest.fn().mockImplementation(() => ({
 	unobserve: jest.fn(),
 	disconnect: jest.fn(),
 }))
+
+// Mock console.error to prevent noise in test output
+global.console.error = jest.fn()

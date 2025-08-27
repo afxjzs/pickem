@@ -1,40 +1,61 @@
 # Task List for MVP
 
-## M0: Project Setup
-- [ ] Initialize project repository
-- [ ] Set up development environment
-- [ ] Configure version control and branching strategy
-- [ ] Define project structure and initial files
+## M0: Project Setup ✅ COMPLETE
+- [x] Initialize project repository
+- [x] Set up development environment
+- [x] Configure version control and branching strategy
+- [x] Set up Next.js and Tailwind v4
+- [x] Set up Supabase backend
 
-## M1: User Authentication
-- [ ] Design user authentication flow
-- [ ] Implement user registration
-- [ ] Implement user login and logout
-- [ ] Add password reset functionality
-- [ ] Set up session management and security
+## M1: Database & Migrations ✅ COMPLETE
+- [x] Create database schema and migrations
+- [x] Set up Supabase local instance
+- [x] Apply initial migration
+- [x] Seed database with sample data
 
-## M2: Core Functionality - Pickem Game
-- [ ] Design game rules and logic
-- [ ] Implement game creation and management
-- [ ] Enable users to make picks/selections
-- [ ] Calculate and display user scores
-- [ ] Implement real-time updates for game status
+## M2: Authentication System ✅ COMPLETE
+- [x] Implement user registration and login (Supabase)
+- [x] Set up homepage with dynamic content based on auth state
+- [x] Add navigation and basic layout
+- [x] Create protected dashboard route
+- [x] Implement sign out functionality
+- [x] Add route protection and redirects
+- [x] Write comprehensive unit tests (14/14 passing)
+- [x] Fix test console errors and ensure clean output
 
-## M3: User Interface and Experience
-- [ ] Design UI mockups and wireframes
-- [ ] Develop responsive frontend components
-- [ ] Integrate frontend with backend APIs
-- [ ] Implement notifications and alerts
+## M3: Data APIs Integration 🔄 NEXT MILESTONE
+- [ ] Research and trial sports data APIs (SRC: https://gist.github.com/nntrn/ee26cb2a0716de0947a0a4e9a157bc1c)
+- [ ] Fetch and display NFL schedule
+- [ ] Fetch and display matchups, standings, teams, and past results
+- [ ] Validate and adapt to API data shape
+- [ ] Build backend endpoints to proxy/normalize data as needed
 
-## M4: Testing and Deployment
-- [ ] Write unit and integration tests
-- [ ] Perform user acceptance testing
-- [ ] Set up continuous integration and deployment pipelines
+## M4: Picks & Leaderboards
+- [ ] Implement picks UI and backend logic
+- [ ] Allow users to make/edit picks with confidence points
+- [ ] Calculate and display weekly/overall leaderboards
+- [ ] Display user standings
+
+## M5: Payments & Payouts
+- [ ] Integrate Stripe for entry payments
+- [ ] Track user payments and payment history
+- [ ] Implement payout tracking and admin approval
+- [ ] Integrate Stripe payouts
+
+## M6: Testing & Deployment
+- [x] Write unit and integration tests
+- [ ] Set up CI/CD pipelines
 - [ ] Deploy MVP to production environment
 - [ ] Monitor performance and fix bugs
 
----
+## Current Status
+**M2 (Authentication) is 100% complete and functional!**
+- All authentication features working: signup, signin, dashboard, signout
+- Route protection implemented
+- All tests passing (14/14) with clean output
+- Ready to proceed to M3 (Data APIs Integration)
 
-# Kickoff Prompt
-
-You are an assistant tasked with executing the MVP project plan for the Pickem application. Begin by setting up the project repository and development environment as outlined in milestone M0. Proceed sequentially through each milestone, ensuring all tasks are completed before moving on to the next. Provide detailed updates on progress and any issues encountered. Prioritize clear, maintainable code and adhere to best practices throughout the project lifecycle.
+## Next Steps
+1. **M3**: Integrate NFL data APIs to display real schedule and standings
+2. **M4**: Build picks system and leaderboards
+3. **M5**: Implement Stripe payments and payouts

@@ -5,6 +5,10 @@
 ## 1. Overview
 Pick’em is a fantasy sports application focused on a single global league for the NFL. Users make weekly picks on NFL games, assign confidence points to their picks, and compete on leaderboards. The platform integrates Stripe for payments and manages payouts to winners. The app provides a streamlined experience via responsive web and mobile interfaces, supported by a secure and scalable backend.
 
+### Other Info
+- `./start.sh` to start/restart the server
+- Local dev URL is http://local.pickem:3000
+
 # ==============================
 
 ## 2. Objectives
@@ -17,20 +21,21 @@ Pick’em is a fantasy sports application focused on a single global league for 
 # ==============================
 
 ## 3. Scope
-The MVP will include:
+### MVP Scope
+The MVP focuses on the core Pick’em workflow:
 - User registration and authentication.
-- Weekly NFL game picks with confidence points.
-- Payment integration with Stripe for entry fees.
-- Real-time scoring, leaderboards, and payout tracking.
+- Homepage with schedule, matchups, standings, team info, and past results via 3rd party data APIs.
+- Picks with confidence points and leaderboards.
+- Payments for entry (Stripe) and payouts to winners.
 - Responsive UI for web and mobile.
 - Admin management of users, funds, and pricing.
 
-Future expansion will add:
+### Out of Scope for MVP
 - Multi-league support.
 - Advanced social features (chat, forums).
 - Gamification elements (badges, rewards).
-- Admin dashboards and analytics.
-- Expanded sports and data integrations.
+- Admin dashboards, analytics, and documentation.
+- Internationalization, daily backups, disaster recovery, advanced monitoring.
 
 # ==============================
 
@@ -99,7 +104,15 @@ Future expansion will add:
 - Secure authentication and data storage.
 - Responsive design for desktop and mobile.
 - Real-time updates with WebSockets or polling.
-- GDPR and CCPA compliance.
+
+# ==============================
+
+## 8. 3rd Party Data APIs Integration
+The application relies on integrating external sports data APIs to provide NFL schedule, matchups, standings, team info, and past results. The integration approach is:
+- Trial & error: Explore multiple sports data APIs (e.g. TheSportsDB, Sportsdata.io, MySportsFeeds) to find the most reliable and complete source.
+- Confirm data shape: Fetch sample data for each required endpoint (schedule, matchups, standings, teams, results) and validate structure.
+- Adapt as needed: Adjust backend and frontend to match the actual API responses.
+- Cache later: For MVP, fetch live data directly; add caching/optimization after API integration is stable.
 
 # ==============================
 
@@ -522,11 +535,11 @@ Note: The application supports only a single global NFL league for the MVP. Comp
 
 ## 21. Roadmap
 
-| Phase         | Features                                  | Timeline       |
-|---------------|-------------------------------------------|----------------|
-| Phase 1 (MVP) | User auth, weekly NFL picks, payments, scoring, leaderboards, payouts | Weeks 1-6      |
-| Phase 2       | Notifications, mobile app, enhanced admin dashboard | Weeks 7-12     |
-| Phase 3       | Multi-league support, social features, gamification | Weeks 13-18    |
+| Phase         | Features                                                                 | Timeline       |
+|---------------|--------------------------------------------------------------------------|----------------|
+| Phase 1 (MVP) | 1. Auth + basic app scaffold<br>2. Integrate/explore 3rd party data APIs<br>3. Build picks & leaderboards<br>4. Add payments & payouts | Weeks 1-6      |
+| Phase 2       | Notifications, mobile app, enhanced admin dashboard                      | Weeks 7-12     |
+| Phase 3       | Multi-league support, social features, gamification                      | Weeks 13-18    |
 
 # ==============================
 
