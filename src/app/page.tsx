@@ -1,0 +1,64 @@
+import Link from "next/link"
+
+export default function Home() {
+	return (
+		<main className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900">
+			<div className="container mx-auto px-4 py-16">
+				<div className="text-center">
+					<h1 className="text-6xl font-bold text-white mb-6">Pick&apos;em</h1>
+					<p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+						Make weekly NFL picks with confidence points and compete for prizes
+						in our global league
+					</p>
+
+					<div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+						<Link
+							href="/auth/signin"
+							className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg text-lg transition-colors"
+						>
+							Sign In
+						</Link>
+						<Link
+							href="/auth/signup"
+							className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg text-lg transition-colors"
+						>
+							Sign Up
+						</Link>
+					</div>
+
+					<div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+						<div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+							<h3 className="text-xl font-semibold text-white mb-3">
+								Weekly Picks
+							</h3>
+							<p className="text-blue-100">
+								Pick winners for every NFL game and assign confidence points to
+								maximize your score
+							</p>
+						</div>
+
+						<div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+							<h3 className="text-xl font-semibold text-white mb-3">
+								Live Standings
+							</h3>
+							<p className="text-blue-100">
+								Track your performance with real-time scoring and weekly/season
+								leaderboards
+							</p>
+						</div>
+
+						<div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+							<h3 className="text-xl font-semibold text-white mb-3">
+								Win Prizes
+							</h3>
+							<p className="text-blue-100">
+								Compete for weekly and season prizes with secure payment
+								processing
+							</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</main>
+	)
+}
