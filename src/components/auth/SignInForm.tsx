@@ -25,9 +25,13 @@ export function SignInForm() {
 	const isUserValidationError = (error: string): boolean => {
 		const userErrors = [
 			"Invalid credentials",
+			"Invalid login credentials",
 			"Email not confirmed",
 			"Invalid email",
 			"User not found",
+			"Wrong password",
+			"Account not found",
+			"Email or password is incorrect",
 		]
 		return userErrors.some((userError) => error.includes(userError))
 	}

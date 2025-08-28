@@ -117,7 +117,7 @@ export default function TeamsDisplay({
 					<div className="mb-4 px-4">
 						<label
 							htmlFor="conference"
-							className="block text-sm font-medium text-gray-700 mb-2"
+							className="block text-sm font-medium text-gray-700 mb-3"
 						>
 							Conference
 						</label>
@@ -127,7 +127,7 @@ export default function TeamsDisplay({
 							onChange={(e) =>
 								setConference(e.target.value as "AFC" | "NFC" | "")
 							}
-							className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm bg-white text-gray-900"
+							className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm bg-white text-gray-900 py-3 px-4"
 						>
 							<option value="">All Conferences</option>
 							<option value="AFC">AFC</option>
@@ -150,7 +150,7 @@ export default function TeamsDisplay({
 									e.target.value as "East" | "North" | "South" | "West" | ""
 								)
 							}
-							className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm bg-white text-gray-900"
+							className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm bg-white text-gray-900 py-3 px-4"
 						>
 							<option value="">All Divisions</option>
 							<option value="East">East</option>

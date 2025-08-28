@@ -75,22 +75,10 @@ export function normalizeGame(espnGame: ESPNGame): NormalizedGame {
 	// So 8:20 PM ET = 1:20 AM UTC next day
 	// And 8:30 PM ET = 1:30 AM UTC next day
 
-	// Convert UTC time to ET by subtracting 5 hours
-	// For September (standard time): ET = UTC-5
-	let etHour = gameDate.getUTCHours() - 5
-	let etDay = gameDate.getUTCDay()
-
-	// Handle day boundary crossing
-	if (etHour < 0) {
-		etHour += 24
-		etDay = (etDay - 1 + 7) % 7
-	}
-
-	// SNF: Sunday 8PM ET or later (8PM = 20:00 ET)
-	const isSNF = etDay === 0 && etHour >= 20
-
-	// MNF: Monday 8PM ET or later (8PM = 20:00 ET)
-	const isMNF = etDay === 1 && etHour >= 20
+	// Simple approach: We'll identify SNF/MNF after all games are processed
+	// For now, set both to false and we'll update them in the sync function
+	const isSNF = false
+	const isMNF = false
 
 	// Parse scores if available
 	const homeScore = homeTeam.score ? parseInt(homeTeam.score) : undefined

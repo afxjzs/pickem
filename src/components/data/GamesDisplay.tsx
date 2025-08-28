@@ -324,7 +324,18 @@ export default function GamesDisplay({
 						/>
 					</div>
 
-					<div className="ml-auto">
+					<div className="ml-auto flex items-center space-x-4">
+						<button
+							onClick={() => {
+								setError(null)
+								setLoading(true)
+								// Clear cache by adding timestamp to force fresh data
+								fetchGames()
+							}}
+							className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+						>
+							🔄 Resync
+						</button>
 						<span className="text-sm text-gray-500">
 							{games.length} game{games.length !== 1 ? "s" : ""}
 						</span>

@@ -160,11 +160,65 @@ class DataSyncService {
 		const espnGames = await espnAPI.getSchedule(season, week)
 		games = normalizeGames(espnGames)
 
+		// Identify SNF and MNF games
+		games = this.identifySNFandMNF(games)
+
 		// Cache the normalized data
 		this.setCachedData(cacheKey, games, this.GAMES_TTL)
 
 		// Sync to database
 		await this.syncGamesToDatabase(games)
+
+		return games
+	}
+
+	/**
+	 * Identify SNF and MNF games based on game times
+	 */
+	private identifySNFandMNF(games: NormalizedGame[]): NormalizedGame[] {
+		// Group games by day (ET)
+		const gamesByDay = new Map<number, NormalizedGame[]>()
+
+		games.forEach((game) => {
+			const gameDate = new Date(game.start_time)
+			// Convert to ET (UTC-5 for September)
+			let etHour = gameDate.getUTCHours() - 5
+			let etDay = gameDate.getUTCDay()
+
+			// Handle day boundary crossing
+			if (etHour < 0) {
+				etHour += 24
+				etDay = (etDay - 1 + 7) % 7
+			}
+
+			// Create a key for the day
+			const dayKey = etDay
+			if (!gamesByDay.has(dayKey)) {
+				gamesByDay.set(dayKey, [])
+			}
+			gamesByDay.get(dayKey)!.push(game)
+		})
+
+		// Find the last game on Sunday (day 0) and Monday (day 1)
+		const sundayGames = gamesByDay.get(0) || []
+		const mondayGames = gamesByDay.get(1) || []
+
+		// Sort by time and mark the last game of each day
+		if (sundayGames.length > 0) {
+			sundayGames.sort(
+				(a, b) =>
+					new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+			)
+			sundayGames[sundayGames.length - 1].is_snf = true
+		}
+
+		if (mondayGames.length > 0) {
+			mondayGames.sort(
+				(a, b) =>
+					new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+			)
+			mondayGames[mondayGames.length - 1].is_mnf = true
+		}
 
 		return games
 	}

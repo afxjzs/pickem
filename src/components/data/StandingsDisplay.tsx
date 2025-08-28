@@ -160,7 +160,7 @@ export default function StandingsDisplay({
 							id="season"
 							value={season}
 							onChange={(e) => setSeason(parseInt(e.target.value))}
-							className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm bg-white text-gray-900"
+							className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm bg-white text-gray-900 py-3 px-4"
 						>
 							<option value={2025}>2025</option>
 							<option value={2024}>2024</option>
@@ -182,7 +182,7 @@ export default function StandingsDisplay({
 							onChange={(e) =>
 								setConference(e.target.value as "AFC" | "NFC" | "")
 							}
-							className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm bg-white text-gray-900"
+							className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm bg-white text-gray-900 py-3 px-4"
 						>
 							<option value="">All Conferences</option>
 							<option value="AFC">AFC</option>
