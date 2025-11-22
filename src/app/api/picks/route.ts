@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
       // from().select().eq().eq().eq().eq() (5 levels)
       const { data: usedPoints, error: usedPointsErr } = await supabase
         .from("picks")
-        .select("confidence_points, games!inner(week, season)")
+        .select("id, confidence_points, games!inner(week, season, status, start_time)")
         .eq("user_id", user.id)
         .eq("confidence_points", confidencePoints)
         .eq("games.week", game.week)
@@ -222,12 +222,31 @@ export async function POST(request: NextRequest) {
         return handleAPIError(usedPointsErr, "validate confidence points usage")
       }
 
+      // If the point is used by another game, automatically clear it from that game
+      // This allows reassignment of confidence points
       if ((usedPoints || []).length > 0) {
-        return createErrorResponse(
-          "Bad Request",
-          `Confidence points ${confidencePoints} already used for week ${game.week}`,
-          400
-        )
+        const otherPick = usedPoints[0]
+        const otherGame = (otherPick as any).games
+        
+        // Check if the other game is locked - if so, don't allow reassignment
+        if (otherGame && otherGame.status !== "scheduled") {
+          return createErrorResponse(
+            "Bad Request",
+            `Confidence points ${confidencePoints} is assigned to a locked game and cannot be changed`,
+            400
+          )
+        }
+        
+        // Clear the confidence point from the other pick
+        const { error: clearError } = await supabase
+          .from("picks")
+          .update({ confidence_points: 0 })
+          .eq("id", otherPick.id)
+        
+        if (clearError) {
+          console.error("Failed to clear confidence point from other pick:", clearError)
+          return handleAPIError(clearError, "clear confidence point from other pick")
+        }
       }
     }
 
@@ -352,7 +371,7 @@ export async function PUT(request: NextRequest) {
     if (existingPick.confidence_points !== confidencePoints && confidencePoints > 0) {
       const { data: usedPoints, error: usedPointsErr } = await supabase
         .from("picks")
-        .select("confidence_points, games!inner(week, season)")
+        .select("id, confidence_points, games!inner(week, season, status, start_time)")
         .eq("user_id", user.id)
         .eq("confidence_points", confidencePoints)
         .eq("games.week", game.week)
@@ -363,12 +382,31 @@ export async function PUT(request: NextRequest) {
         return handleAPIError(usedPointsErr, "validate confidence points usage")
       }
 
+      // If the point is used by another game, automatically clear it from that game
+      // This allows reassignment of confidence points
       if ((usedPoints || []).length > 0) {
-        return createErrorResponse(
-          "Bad Request",
-          `Confidence points ${confidencePoints} already used for week ${game.week}`,
-          400
-        )
+        const otherPick = usedPoints[0]
+        const otherGame = (otherPick as any).games
+        
+        // Check if the other game is locked - if so, don't allow reassignment
+        if (otherGame && otherGame.status !== "scheduled") {
+          return createErrorResponse(
+            "Bad Request",
+            `Confidence points ${confidencePoints} is assigned to a locked game and cannot be changed`,
+            400
+          )
+        }
+        
+        // Clear the confidence point from the other pick
+        const { error: clearError } = await supabase
+          .from("picks")
+          .update({ confidence_points: 0 })
+          .eq("id", otherPick.id)
+        
+        if (clearError) {
+          console.error("Failed to clear confidence point from other pick:", clearError)
+          return handleAPIError(clearError, "clear confidence point from other pick")
+        }
       }
     }
 
