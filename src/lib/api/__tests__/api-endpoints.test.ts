@@ -94,7 +94,8 @@ describe("API Endpoint Logic", () => {
 				(game) => game.home_team === "BUF" || game.away_team === "BUF"
 			)
 			expect(bufGames).toHaveLength(1)
-			expect(bufGames[0].away_team).toBe("BUF")
+			expect(bufGames[0].home_team).toBe("BUF")
+			expect(bufGames[0].away_team).toBe("MIA")
 		})
 
 		it("should handle standings grouping logic", () => {
@@ -198,3 +199,4 @@ describe("API Endpoint Logic", () => {
 		})
 	})
 })
+

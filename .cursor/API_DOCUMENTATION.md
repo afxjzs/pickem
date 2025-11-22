@@ -658,4 +658,4 @@ Depthcharts, injuries, coaches, roster, odds records
 - https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/2024/segments/1/leaguedefaults/3?scoringPeriodId=0&view=kona_player_info
 - https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/2024?view=chui_default_admin_group
 - https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/2024?view=chui_default_dashboard
-- https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/2024?view=chui_default_platformsettings
+- https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/2024?view=chui_default_platformsettingsNFase here

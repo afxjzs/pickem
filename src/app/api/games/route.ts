@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server"
 import { dataSync } from "@/lib/api/sync"
+import { createClient } from "@/lib/supabase/server"
 import { createSuccessResponse, handleAPIError, isValidGameStatus, isValidTeamAbbreviation } from "@/lib/api/utils"
 
 export async function GET(request: NextRequest) {
@@ -23,11 +24,32 @@ export async function GET(request: NextRequest) {
 			return handleAPIError(new Error(`Invalid team abbreviation: ${team}`), "fetch games")
 		}
 
-		// Sync games from ESPN API
-		const games = await dataSync.syncGames(parseInt(season), weekNumber)
+		// Sync games from ESPN API to database
+		await dataSync.syncGames(parseInt(season), weekNumber)
 
 		// Also sync teams to ensure we have the latest team data
 		const teams = await dataSync.syncTeams()
+
+		// Fetch games from database (they now have UUIDs)
+		const supabase = await createClient()
+		let query = supabase
+			.from("games")
+			.select("*")
+			.eq("season", season)
+
+		if (weekNumber) {
+			query = query.eq("week", weekNumber)
+		}
+
+		if (status) {
+			query = query.eq("status", status)
+		}
+
+		const { data: games, error: gamesError } = await query
+
+		if (gamesError) {
+			return handleAPIError(gamesError, "fetch games from database")
+		}
 
 		// Create a mapping of team abbreviations to team data
 		const teamMap = teams.reduce((acc, team) => {
@@ -36,30 +58,24 @@ export async function GET(request: NextRequest) {
 		}, {} as Record<string, typeof teams[0]>)
 
 		// Enrich games with team data
-		const enrichedGames = games.map(game => ({
+		let enrichedGames = (games || []).map(game => ({
 			...game,
 			home_team_data: teamMap[game.home_team] || null,
 			away_team_data: teamMap[game.away_team] || null,
 		}))
 
-		// Apply filters if provided
-		let filteredGames = enrichedGames
-
-		if (status) {
-			filteredGames = filteredGames.filter(game => game.status === status)
-		}
-
+		// Apply team filter if provided
 		if (team) {
-			filteredGames = filteredGames.filter(game => 
+			enrichedGames = enrichedGames.filter(game => 
 				game.home_team === team || game.away_team === team
 			)
 		}
 
 		// Sort by start time (earliest first)
-		filteredGames.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+		enrichedGames.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
 
-		return createSuccessResponse(filteredGames, {
-			count: filteredGames.length,
+		return createSuccessResponse(enrichedGames, {
+			count: enrichedGames.length,
 			season,
 			week: weekNumber
 		})

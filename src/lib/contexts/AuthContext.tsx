@@ -37,6 +37,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
 			try {
 				const { data: { user } } = await supabase.auth.getUser()
 				setUser(user)
+				
+				// Ensure user exists in users table (for users created via Studio or other means)
+				if (user) {
+					try {
+						await fetch('/api/users/create', {
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json',
+							},
+							credentials: 'include',
+						})
+					} catch (error) {
+						console.error('Error ensuring user exists in users table:', error)
+						// Non-critical - user can still use the app
+					}
+				}
 			} catch {
 				console.error('Error getting user')
 			} finally {
@@ -51,6 +67,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
 			async (event, session) => {
 				setUser(session?.user ?? null)
 				setLoading(false)
+				
+				// If user just signed up or signed in, ensure they exist in users table
+				if ((event === 'SIGNED_IN' || event === 'SIGNED_UP') && session?.user) {
+					try {
+						await fetch('/api/users/create', {
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json',
+							},
+							credentials: 'include',
+						})
+					} catch (error) {
+						console.error('Error ensuring user exists in users table:', error)
+						// Non-critical - user can still use the app
+					}
+				}
 			}
 		)
 
@@ -69,8 +101,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 	const signUp = async (email: string, password: string): Promise<{ error: string | null }> => {
 		try {
-			const { error } = await supabase.auth.signUp({ email, password })
-			return { error: error?.message || null }
+			const { data, error } = await supabase.auth.signUp({ email, password })
+			if (error) {
+				return { error: error.message }
+			}
+
+			// If signup successful and we have a user, create user in users table
+			if (data?.user) {
+				try {
+					const response = await fetch('/api/users/create', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						credentials: 'include',
+					})
+
+					const result = await response.json()
+					if (!result.success) {
+						console.error('Failed to create user in users table:', result.message)
+						// Don't fail signup if user creation fails - it's a non-critical error
+						// The user can still sign in, and we'll auto-create on first pick
+					}
+				} catch (createError) {
+					console.error('Error creating user in users table:', createError)
+					// Don't fail signup - user is authenticated, just missing users table entry
+				}
+			}
+
+			return { error: null }
 		} catch {
 			return { error: 'An unexpected error occurred' }
 		}

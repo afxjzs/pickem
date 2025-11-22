@@ -3,32 +3,19 @@ import SeasonInfo from "@/components/data/SeasonInfo"
 import TeamsDisplay from "@/components/data/TeamsDisplay"
 import GamesDisplay from "@/components/data/GamesDisplay"
 import StandingsDisplay from "@/components/data/StandingsDisplay"
+import Navigation from "@/components/layout/Navigation"
 
 export default function DataDashboardPage() {
 	return (
 		<div className="min-h-screen bg-gray-50">
-			{/* Navigation Header */}
-			<header className="bg-white shadow">
-				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-					<div className="flex justify-between items-center py-6">
-						<h1 className="text-3xl font-bold text-gray-900">
-							NFL Data Dashboard
-						</h1>
-						<nav className="flex items-center space-x-4">
-							<a
-								href="/dashboard"
-								className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100"
-							>
-								← Back to Dashboard
-							</a>
-						</nav>
-					</div>
-				</div>
-			</header>
+			<Navigation />
 
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 				{/* Header */}
 				<div className="mb-8">
+					<h1 className="text-3xl font-bold text-gray-900 mb-4">
+						NFL Data Dashboard
+					</h1>
 					<p className="text-gray-600">
 						Real-time NFL data including teams, games, standings, and season
 						information

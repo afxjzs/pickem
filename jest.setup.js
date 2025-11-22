@@ -20,6 +20,22 @@ jest.mock("next/navigation", () => ({
 	},
 }))
 
+// Mock Next.js server components
+jest.mock("next/server", () => ({
+	NextRequest: class MockNextRequest {
+		constructor(url) {
+			this.url = url
+		}
+	},
+	NextResponse: {
+		json: jest.fn((data, options) => ({
+			status: options?.status || 200,
+			json: jest.fn().mockResolvedValue(data),
+			...data,
+		})),
+	},
+}))
+
 // Mock Next.js image component
 jest.mock("next/image", () => ({
 	__esModule: true,

@@ -23,7 +23,7 @@ export function createSuccessResponse<T>(
 		success: true,
 		data,
 		timestamp: new Date().toISOString(),
-		...additionalFields
+		...additionalFields,
 	}
 
 	return NextResponse.json(response)
@@ -43,7 +43,7 @@ export function createErrorResponse(
 		error,
 		message,
 		timestamp: new Date().toISOString(),
-		...additionalFields
+		...additionalFields,
 	}
 
 	return NextResponse.json(response, { status })
@@ -52,19 +52,25 @@ export function createErrorResponse(
 /**
  * Handle API errors consistently
  */
-export function handleAPIError(error: unknown, context: string): NextResponse<APIResponse> {
+export function handleAPIError(
+	error: unknown,
+	context: string,
+	status: number = 500
+): NextResponse<APIResponse> {
 	console.error(`Error in ${context}:`, error)
-	
+
 	if (error instanceof Error) {
 		return createErrorResponse(
+			error.message,
 			`Failed to ${context}`,
-			error.message
+			status
 		)
 	}
-	
+
 	return createErrorResponse(
 		`Failed to ${context}`,
-		"Unknown error occurred"
+		"Unknown error occurred",
+		status
 	)
 }
 
@@ -73,17 +79,20 @@ export function handleAPIError(error: unknown, context: string): NextResponse<AP
  */
 export function parseQueryParams<T extends Record<string, any>>(
 	searchParams: URLSearchParams,
-	schema: Record<keyof T, {
-		type: "string" | "number" | "boolean"
-		default?: any
-		required?: boolean
-	}>
+	schema: Record<
+		keyof T,
+		{
+			type: "string" | "number" | "boolean"
+			default?: any
+			required?: boolean
+		}
+	>
 ): T {
 	const params: Partial<T> = {}
 
 	for (const [key, config] of Object.entries(schema)) {
 		const value = searchParams.get(key)
-		
+
 		if (value === null) {
 			if (config.required) {
 				throw new Error(`Missing required parameter: ${key}`)
@@ -117,7 +126,11 @@ export function parseQueryParams<T extends Record<string, any>>(
 					break
 			}
 		} catch (parseError) {
-			throw new Error(`Invalid value for parameter ${key}: ${parseError instanceof Error ? parseError.message : "Unknown error"}`)
+			throw new Error(
+				`Invalid value for parameter ${key}: ${
+					parseError instanceof Error ? parseError.message : "Unknown error"
+				}`
+			)
 		}
 	}
 
@@ -130,17 +143,41 @@ export function parseQueryParams<T extends Record<string, any>>(
 export function isValidTeamAbbreviation(abbreviation: string): boolean {
 	const validTeams = [
 		// AFC
-		"BUF", "MIA", "NE", "NYJ", // East
-		"CIN", "BAL", "CLE", "PIT", // North
-		"HOU", "IND", "JAX", "TEN", // South
-		"DEN", "KC", "LV", "LAC",   // West
+		"BUF",
+		"MIA",
+		"NE",
+		"NYJ", // East
+		"CIN",
+		"BAL",
+		"CLE",
+		"PIT", // North
+		"HOU",
+		"IND",
+		"JAX",
+		"TEN", // South
+		"DEN",
+		"KC",
+		"LV",
+		"LAC", // West
 		// NFC
-		"DAL", "NYG", "PHI", "WAS", // East
-		"CHI", "DET", "GB", "MIN",  // North
-		"ATL", "CAR", "NO", "TB",   // South
-		"ARI", "LAR", "SF", "SEA"   // West
+		"DAL",
+		"NYG",
+		"PHI",
+		"WAS", // East
+		"CHI",
+		"DET",
+		"GB",
+		"MIN", // North
+		"ATL",
+		"CAR",
+		"NO",
+		"TB", // South
+		"ARI",
+		"LAR",
+		"SF",
+		"SEA", // West
 	]
-	
+
 	return validTeams.includes(abbreviation.toUpperCase())
 }
 
@@ -162,7 +199,9 @@ export function isValidDivision(division: string): boolean {
  * Validate game status
  */
 export function isValidGameStatus(status: string): boolean {
-	return ["scheduled", "live", "final", "cancelled"].includes(status.toLowerCase())
+	return ["scheduled", "live", "final", "cancelled"].includes(
+		status.toLowerCase()
+	)
 }
 
 /**
@@ -177,7 +216,7 @@ export function formatGameDate(dateString: string): string {
 		day: "numeric",
 		hour: "numeric",
 		minute: "2-digit",
-		timeZoneName: "short"
+		timeZoneName: "short",
 	})
 }
 

@@ -25,10 +25,23 @@ jest.mock("../espn", () => ({
 import { dataSync } from "../sync"
 import type { ESPNTeam, ESPNGame, ESPNStanding } from "../espn"
 
+// Mock console methods to avoid test output noise
+const originalConsoleLog = console.log
+const originalConsoleError = console.error
+
 describe("Data Sync Service", () => {
 	beforeEach(() => {
 		jest.clearAllMocks()
 		dataSync.clearCache()
+		// Suppress console.log during tests
+		console.log = jest.fn()
+		console.error = jest.fn()
+	})
+
+	afterAll(() => {
+		// Restore console methods
+		console.log = originalConsoleLog
+		console.error = originalConsoleError
 	})
 
 	describe("Rate Limiting", () => {

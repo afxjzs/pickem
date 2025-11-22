@@ -138,23 +138,23 @@ export function normalizeStanding(
 	const totalGames = wins + losses + ties
 	const winPercentage = totalGames > 0 ? (wins + ties * 0.5) / totalGames : 0
 
-	// Extract team ID from the team reference URL
-	// The URL format is: http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2025/teams/{TEAM_ID}?lang=en&region=us
+	// Extract team ID - use abbreviation as team_id for database consistency
 	let teamId = ""
-	if (
-		espnStanding.team &&
-		typeof espnStanding.team === "object" &&
-		"$ref" in espnStanding.team
-	) {
-		const refUrl = (espnStanding.team as any).$ref
-		const match = refUrl.match(/\/teams\/(\d+)/)
-		if (match) {
-			teamId = match[1]
+	if (espnStanding.team) {
+		if (typeof espnStanding.team === "object" && "abbreviation" in espnStanding.team) {
+			teamId = espnStanding.team.abbreviation
+		} else if (typeof espnStanding.team === "object" && "$ref" in espnStanding.team) {
+			// Fallback: Extract from reference URL if abbreviation not available
+			const refUrl = (espnStanding.team as any).$ref
+			const match = refUrl.match(/\/teams\/(\d+)/)
+			if (match) {
+				teamId = match[1]
+			}
 		}
 	}
 
 	return {
-		team_id: teamId, // Use the extracted team ID
+		team_id: teamId, // Use the team abbreviation as team_id
 		season,
 		conference,
 		wins,

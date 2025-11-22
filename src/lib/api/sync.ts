@@ -139,7 +139,8 @@ class DataSyncService {
 		const cacheKey = `games_${season}_${week || "current"}`
 		let games = this.getCachedData<NormalizedGame[]>(cacheKey)
 
-		if (games) {
+		// Don't use cache if it's empty - force fresh fetch
+		if (games && games.length > 0) {
 			console.log(
 				`Using cached games data for season ${season}, week ${
 					week || "current"
@@ -282,12 +283,35 @@ class DataSyncService {
 		const supabase = await createClient()
 
 		for (const game of games) {
-			const { error } = await supabase
+			// First, check if game exists by espn_id
+			const { data: existing } = await supabase
 				.from("games")
-				.upsert(game, { onConflict: "espn_id" })
+				.select("id")
+				.eq("espn_id", game.espn_id)
+				.single()
 
-			if (error) {
-				console.error(`Error syncing game ${game.espn_id}:`, error)
+			if (existing) {
+				// Update existing game
+				const { error } = await supabase
+					.from("games")
+					.update(game)
+					.eq("id", existing.id)
+
+				if (error) {
+					console.error(`Error updating game ${game.espn_id}:`, error)
+				}
+			} else {
+				// Insert new game
+				const { data: inserted, error } = await supabase
+					.from("games")
+					.insert(game)
+					.select()
+
+				if (error) {
+					console.error(`Error inserting game ${game.espn_id}:`, error)
+				} else if (!inserted || inserted.length === 0) {
+					console.error(`Failed to insert game ${game.espn_id}: No data returned`)
+				}
 			}
 		}
 

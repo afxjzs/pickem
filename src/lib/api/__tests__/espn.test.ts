@@ -132,7 +132,7 @@ describe("ESPN API Service", () => {
 			const schedule = await espnAPI.getSchedule(2024, 1)
 
 			expect(fetch).toHaveBeenCalledWith(
-				"https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=2024&seasontype=2&week=1"
+				"https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=2&limit=100&week=1"
 			)
 			expect(schedule).toHaveLength(1)
 			expect(schedule[0].id).toBe("123")
@@ -223,9 +223,10 @@ describe("ESPN API Service", () => {
 			const seasonInfo = await espnAPI.getCurrentSeasonInfo()
 
 			expect(seasonInfo).toEqual({
-				season: 2024,
+				season: 2025,
 				currentWeek: 1,
 			})
 		})
 	})
 })
+
