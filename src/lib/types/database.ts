@@ -42,6 +42,7 @@ export interface Game {
 	is_snf: boolean
 	is_mnf: boolean
 	spread?: number
+	over_under?: number
 	created_at: string
 	updated_at: string
 }
@@ -141,5 +142,8 @@ export interface SeasonStanding {
 	total_points: number
 	weeks_played: number
 	average_points: number
+	total_picks: number
+	correct_picks: number
+	correct_picks_percentage: number
 	rank: number
 }

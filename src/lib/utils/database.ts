@@ -85,27 +85,49 @@ export async function getSeasonStandings(season: string) {
 	}
 	
 	// Aggregate scores by user
-	const userTotals = new Map<string, { total: number; weeks: number; user: { display_name: string } }>()
+	const userTotals = new Map<string, { 
+		total: number
+		weeks: number
+		totalPicks: number
+		correctPicks: number
+		user: { display_name: string }
+	}>()
 	
 	data?.forEach(score => {
 		const userId = score.user_id
 		if (!userTotals.has(userId)) {
-			userTotals.set(userId, { total: 0, weeks: 0, user: score.users })
+			userTotals.set(userId, { 
+				total: 0, 
+				weeks: 0, 
+				totalPicks: 0,
+				correctPicks: 0,
+				user: score.users 
+			})
 		}
 		const userTotal = userTotals.get(userId)!
 		userTotal.total += score.points
 		userTotal.weeks += 1
+		userTotal.totalPicks += score.total_picks || 0
+		userTotal.correctPicks += score.correct_picks || 0
 	})
 	
 	// Convert to array and sort by total points
 	const standings = Array.from(userTotals.entries())
-		.map(([userId, { total, weeks, user }]) => ({
-			user_id: userId,
-			display_name: user.display_name,
-			total_points: total,
-			weeks_played: weeks,
-			average_points: Math.round((total / weeks) * 100) / 100
-		}))
+		.map(([userId, { total, weeks, totalPicks, correctPicks, user }]) => {
+			const correctPicksPercentage = totalPicks > 0 
+				? Math.round((correctPicks / totalPicks) * 10000) / 100 // Round to 2 decimal places
+				: 0
+			return {
+				user_id: userId,
+				display_name: user.display_name,
+				total_points: total,
+				weeks_played: weeks,
+				average_points: Math.round((total / weeks) * 100) / 100,
+				total_picks: totalPicks,
+				correct_picks: correctPicks,
+				correct_picks_percentage: correctPicksPercentage
+			}
+		})
 		.sort((a, b) => b.total_points - a.total_points)
 		.map((standing, index) => ({
 			...standing,
@@ -163,24 +185,54 @@ export async function getUserPaymentStatus(userId: string, week: number, season:
 	return false
 }
 
+/**
+ * Check if a game is locked (cannot have picks created or modified)
+ * Games are locked if:
+ * 1. Status is "live" or "final" (game has started or finished)
+ * 2. Current time is within 5 minutes (configurable) of game start time
+ */
 export async function isGameLocked(gameId: string): Promise<boolean> {
 	const supabase = await createClient()
 	
-	// Get game start time
+	// Get game data
 	const { data: game, error } = await supabase
 		.from('games')
-		.select('start_time')
+		.select('start_time, status')
 		.eq('id', gameId)
 		.single()
 	
 	if (error || !game) return true
 	
-	// Get lock offset from config
+	// 1. Check if game status is "live" or "final" - these are always locked
+	if (game.status === "live" || game.status === "final") {
+		return true
+	}
+	
+	// 2. Check if we're within the lock window (5 minutes before start time)
 	const lockOffsetMinutes = await getAppConfig('game_lock_offset_minutes')
 	const lockOffset = parseInt(lockOffsetMinutes || '5')
 	
 	const gameTime = new Date(game.start_time)
 	const lockTime = new Date(gameTime.getTime() - (lockOffset * 60 * 1000))
+	
+	return new Date() >= lockTime
+}
+
+/**
+ * Check if a game is locked (client-side version that takes game object)
+ * Games are locked if:
+ * 1. Status is "live" or "final" (game has started or finished)
+ * 2. Current time is within 5 minutes (configurable) of game start time
+ */
+export function isGameLockedClient(game: { start_time: string; status: string }, lockOffsetMinutes: number = 5): boolean {
+	// 1. Check if game status is "live" or "final" - these are always locked
+	if (game.status === "live" || game.status === "final") {
+		return true
+	}
+	
+	// 2. Check if we're within the lock window (5 minutes before start time)
+	const gameTime = new Date(game.start_time)
+	const lockTime = new Date(gameTime.getTime() - (lockOffsetMinutes * 60 * 1000))
 	
 	return new Date() >= lockTime
 }

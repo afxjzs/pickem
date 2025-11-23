@@ -454,6 +454,13 @@ function PicksPageContent() {
 	}
 
 	const isGameLocked = (game: Game) => {
+		// Games are locked if:
+		// 1. Status is "live" or "final" (game has started or finished)
+		// 2. Current time is within 5 minutes of game start time
+		if (game.status === "live" || game.status === "final") {
+			return true
+		}
+		
 		const gameTime = new Date(game.start_time)
 		const now = new Date()
 		// Games are locked 5 minutes before start time
@@ -790,6 +797,7 @@ function PicksPageContent() {
 										</div>
 									</div>
 
+
 									{/* Teams - Button-based Selection */}
 									{!isLocked ? (
 										<div className="mb-4">
@@ -977,11 +985,47 @@ function PicksPageContent() {
 										</div>
 									)}
 
+									{/* Odds Display - Show spread and over/under */}
+									{(game.spread != null || game.over_under != null) && (
+										<div className="mb-4">
+											<div className="flex items-center justify-center gap-4 text-sm font-medium text-gray-700">
+												{game.spread != null && (() => {
+													const spreadValue = Number(game.spread)
+													// Spread is always from home team's perspective:
+													// Negative = home team favored (e.g., -7.5 means home team favored by 7.5)
+													// Positive = away team favored (e.g., +7.5 means home team is underdog by 7.5)
+													// Always show the home team with the spread value
+													const teamName = homeTeam?.name || homeTeam?.display_name || game.home_team
+													if (spreadValue === 0) {
+														// Pick 'em (spread is 0)
+														return (
+															<div>
+																<span className="font-semibold text-gray-900">Pick 'em</span>
+															</div>
+														)
+													} else {
+														// Show home team with spread (negative or positive)
+														return (
+															<div>
+																<span className="font-semibold text-gray-900">
+																	{teamName} {spreadValue > 0 ? `+${spreadValue}` : spreadValue}
+																</span>
+															</div>
+														)
+													}
+												})()}
+												{game.over_under != null && (
+													<div>
+														<span>O/U: </span>
+														<span className="font-semibold text-gray-900">{game.over_under}</span>
+													</div>
+												)}
+											</div>
+										</div>
+									)}
+
 									{/* Confidence Points - Button Row */}
 									<div className="mb-4">
-										<label className="block text-sm font-medium text-gray-700 mb-2 text-center">
-											Confidence Points
-										</label>
 										<div className="flex flex-wrap gap-2 justify-center">
 											{Array.from({ length: games.length }, (_, i) => i + 1).map((point) => {
 												const isUsed = getUsedConfidencePoints().includes(point)

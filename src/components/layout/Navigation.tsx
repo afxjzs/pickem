@@ -1,10 +1,12 @@
 "use client"
 
+import { memo } from "react"
+import Link from "next/link"
 import { useAuth } from "@/lib/contexts/AuthContext"
 import { useRouter } from "next/navigation"
 import { usePathname } from "next/navigation"
 
-export default function Navigation() {
+function Navigation() {
 	const { user, signOut } = useAuth()
 	const router = useRouter()
 	const pathname = usePathname()
@@ -19,6 +21,9 @@ export default function Navigation() {
 	}
 
 	const isActive = (path: string) => {
+		if (path === "/leaderboard") {
+			return pathname === "/leaderboard" || pathname.startsWith("/leaderboard/")
+		}
 		return pathname === path
 	}
 
@@ -29,7 +34,7 @@ export default function Navigation() {
 					<div className="flex items-center space-x-8">
 						<h1 className="text-3xl font-bold text-gray-900">Pick'em</h1>
 						<nav className="flex items-center space-x-4">
-							<a
+							<Link
 								href="/dashboard"
 								className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
 									isActive("/dashboard")
@@ -38,8 +43,8 @@ export default function Navigation() {
 								}`}
 							>
 								Dashboard
-							</a>
-							<a
+							</Link>
+							<Link
 								href="/picks"
 								className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
 									isActive("/picks")
@@ -48,8 +53,18 @@ export default function Navigation() {
 								}`}
 							>
 								My Picks
-							</a>
-							<a
+							</Link>
+							<Link
+								href="/leaderboard"
+								className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+									isActive("/leaderboard") || isActive("/leaderboard/picks")
+										? "bg-gray-100 text-gray-900"
+										: "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+								}`}
+							>
+								Leaderboard
+							</Link>
+							<Link
 								href="/data"
 								className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
 									isActive("/data")
@@ -58,7 +73,7 @@ export default function Navigation() {
 								}`}
 							>
 								NFL Data
-							</a>
+							</Link>
 						</nav>
 					</div>
 					<div className="flex items-center space-x-4">
@@ -75,3 +90,5 @@ export default function Navigation() {
 		</header>
 	)
 }
+
+export default memo(Navigation)

@@ -164,8 +164,19 @@ export async function POST(request: NextRequest) {
       return createErrorResponse("Not Found", "Game not found", 404)
     }
 
-    // Validate game not started / not live
-    if (game.status !== "scheduled") {
+    // Validate game is not locked
+    // Games are locked if:
+    // 1. Status is "live" or "final" (game has started or finished)
+    // 2. Current time is within 5 minutes of game start time
+    const isLockedByStatus = game.status === "live" || game.status === "final"
+    
+    // Check time-based lock (5 minutes before start)
+    const lockOffsetMinutes = 5 // Could fetch from app_config, but 5 is the default
+    const gameTime = new Date(game.start_time)
+    const lockTime = new Date(gameTime.getTime() - (lockOffsetMinutes * 60 * 1000))
+    const isLockedByTime = new Date() >= lockTime
+    
+    if (isLockedByStatus || isLockedByTime) {
       return createErrorResponse(
         "Bad Request",
         "Game has already started, picks are locked",
@@ -341,8 +352,19 @@ export async function PUT(request: NextRequest) {
       return createErrorResponse("Not Found", "Game not found", 404)
     }
 
-    // Validate game not started / not live
-    if (game.status !== "scheduled") {
+    // Validate game is not locked
+    // Games are locked if:
+    // 1. Status is "live" or "final" (game has started or finished)
+    // 2. Current time is within 5 minutes of game start time
+    const isLockedByStatus = game.status === "live" || game.status === "final"
+    
+    // Check time-based lock (5 minutes before start)
+    const lockOffsetMinutes = 5 // Could fetch from app_config, but 5 is the default
+    const gameTime = new Date(game.start_time)
+    const lockTime = new Date(gameTime.getTime() - (lockOffsetMinutes * 60 * 1000))
+    const isLockedByTime = new Date() >= lockTime
+    
+    if (isLockedByStatus || isLockedByTime) {
       return createErrorResponse(
         "Bad Request",
         "Game has already started, picks are locked",

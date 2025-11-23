@@ -17,7 +17,8 @@ export interface APIResponse<T = any> {
  */
 export function createSuccessResponse<T>(
 	data: T,
-	additionalFields: Record<string, any> = {}
+	additionalFields: Record<string, any> = {},
+	options: { headers?: Record<string, string> } = {}
 ): NextResponse<APIResponse<T>> {
 	const response: APIResponse<T> = {
 		success: true,
@@ -26,7 +27,9 @@ export function createSuccessResponse<T>(
 		...additionalFields,
 	}
 
-	return NextResponse.json(response)
+	return NextResponse.json(response, {
+		headers: options.headers || {}
+	})
 }
 
 /**

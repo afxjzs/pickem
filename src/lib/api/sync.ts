@@ -8,6 +8,7 @@ import {
 	normalizeAllStandings,
 } from "./normalizers"
 import { createClient } from "@/lib/supabase/server"
+import { shouldSyncGames, setLastSyncTime } from "@/lib/utils/sync-status"
 import type {
 	NormalizedTeam,
 	NormalizedGame,
@@ -136,17 +137,29 @@ class DataSyncService {
 		season: number = 2024,
 		week?: number
 	): Promise<NormalizedGame[]> {
-		const cacheKey = `games_${season}_${week || "current"}`
-		let games = this.getCachedData<NormalizedGame[]>(cacheKey)
-
-		// Don't use cache if it's empty - force fresh fetch
-		if (games && games.length > 0) {
+		const seasonStr = season.toString()
+		
+		// If week is provided, check if we should sync using smart caching
+		if (week !== undefined) {
+			const needsSync = await shouldSyncGames(seasonStr, week)
+			
+			if (!needsSync) {
+				console.log(
+					`⏭️  Skipping sync for season ${season}, week ${week} - data is fresh`
+				)
+				// Return empty array - caller should fetch from database
+				// The in-memory cache is still used as a fallback
+				const cacheKey = `games_${season}_${week}`
+				const cachedGames = this.getCachedData<NormalizedGame[]>(cacheKey)
+				if (cachedGames && cachedGames.length > 0) {
+					return cachedGames
+				}
+				return []
+			}
+			
 			console.log(
-				`Using cached games data for season ${season}, week ${
-					week || "current"
-				}`
+				`🔄 Syncing games for season ${season}, week ${week} - data is stale or first sync`
 			)
-			return games
 		}
 
 		if (!this.canMakeAPICall("games")) {
@@ -159,18 +172,24 @@ class DataSyncService {
 			}`
 		)
 		const espnGames = await espnAPI.getSchedule(season, week)
-		games = normalizeGames(espnGames)
+		const games = normalizeGames(espnGames)
 
 		// Identify SNF and MNF games
-		games = this.identifySNFandMNF(games)
+		const gamesWithSNFMNF = this.identifySNFandMNF(games)
 
-		// Cache the normalized data
-		this.setCachedData(cacheKey, games, this.GAMES_TTL)
+		// Cache the normalized data (in-memory cache)
+		const cacheKey = `games_${season}_${week || "current"}`
+		this.setCachedData(cacheKey, gamesWithSNFMNF, this.GAMES_TTL)
 
 		// Sync to database
-		await this.syncGamesToDatabase(games)
+		await this.syncGamesToDatabase(gamesWithSNFMNF)
 
-		return games
+		// Store sync timestamp if week is provided
+		if (week !== undefined) {
+			await setLastSyncTime(seasonStr, week)
+		}
+
+		return gamesWithSNFMNF
 	}
 
 	/**
@@ -354,6 +373,110 @@ class DataSyncService {
 		}
 
 		return await espnAPI.getCurrentSeasonInfo()
+	}
+
+	/**
+	 * Sync odds (spread and over/under) for games in a specific week
+	 * This updates more frequently than game data since odds can change at any time
+	 * @param season - Season year
+	 * @param week - Week number
+	 * @param gameIds - Optional array of game espn_ids to sync (if not provided, syncs all games for the week)
+	 */
+	async syncGameOdds(
+		season: number = 2025,
+		week?: number,
+		gameIds?: string[]
+	): Promise<void> {
+		try {
+			const supabase = await createClient()
+			
+			// Fetch games from database for this week
+			let query = supabase
+				.from("games")
+				.select("id, espn_id")
+				.eq("season", season.toString())
+			
+			if (week !== undefined) {
+				query = query.eq("week", week)
+			}
+			
+			if (gameIds && gameIds.length > 0) {
+				query = query.in("espn_id", gameIds)
+			}
+			
+			const { data: games, error: gamesError } = await query
+			
+			if (gamesError) {
+				console.error("Error fetching games for odds sync:", gamesError)
+				return
+			}
+			
+			if (!games || games.length === 0) {
+				console.log("No games found to sync odds for")
+				return
+			}
+			
+			console.log(`Syncing odds for ${games.length} games...`)
+			
+			let updated = 0
+			let errors = 0
+			
+			// Sync odds for each game
+			for (const game of games) {
+				if (!game.espn_id) {
+					continue
+				}
+				
+				// Check rate limiting
+				if (!this.canMakeAPICall("odds")) {
+					console.warn("Rate limit reached for odds endpoint, stopping sync")
+					break
+				}
+				
+				try {
+					// Fetch odds from ESPN
+					const odds = await espnAPI.getGameOdds(game.espn_id)
+					
+					if (odds) {
+						// Update game with odds data
+						const updateData: { spread?: number | null; over_under?: number | null } = {}
+						
+						if (odds.spread !== null) {
+							updateData.spread = odds.spread
+						}
+						
+						if (odds.overUnder !== null) {
+							updateData.over_under = odds.overUnder
+						}
+						
+						// Only update if we have at least one value
+						if (Object.keys(updateData).length > 0) {
+							const { error: updateError } = await supabase
+								.from("games")
+								.update(updateData)
+								.eq("id", game.id)
+							
+							if (updateError) {
+								console.error(`Error updating odds for game ${game.espn_id}:`, updateError)
+								errors++
+							} else {
+								updated++
+							}
+						}
+					}
+					
+					// Small delay to avoid hitting rate limits
+					await new Promise(resolve => setTimeout(resolve, 100))
+				} catch (error) {
+					console.error(`Error syncing odds for game ${game.espn_id}:`, error)
+					errors++
+				}
+			}
+			
+			console.log(`Odds sync complete: ${updated} updated, ${errors} errors`)
+		} catch (error) {
+			console.error("Error in syncGameOdds:", error)
+		}
 	}
 
 	/**

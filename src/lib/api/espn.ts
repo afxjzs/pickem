@@ -475,6 +475,77 @@ class ESPNAPIService {
 	}
 
 	/**
+	 * Fetch odds (spread and over/under) for a specific game
+	 * @param eventId - ESPN event ID (game ID)
+	 * @returns Object with spread and overUnder, or null if not available
+	 */
+	async getGameOdds(eventId: string): Promise<{ spread: number | null; overUnder: number | null } | null> {
+		try {
+			// ESPN odds endpoint
+			const url = `${this.coreURL}/events/${eventId}/competitions/${eventId}/odds`
+			const response = await fetch(url)
+			
+			if (!response.ok) {
+				// Odds may not be available for all games, return null instead of throwing
+				if (response.status === 404) {
+					return null
+				}
+				throw new Error(`Failed to fetch odds: ${response.status}`)
+			}
+
+			const data = await response.json()
+			
+			// ESPN odds API returns an items array with odds from different providers
+			// Some items may have $ref (need to fetch separately), others have direct data
+			// We'll use the first item with direct spread/overUnder data
+			const items = data.items || []
+			
+			if (items.length === 0) {
+				return null
+			}
+			
+			// Find first item with direct spread/overUnder data (not just a $ref)
+			let spread: number | null = null
+			let overUnder: number | null = null
+			
+			for (const item of items) {
+				// Skip items that only have $ref (would need separate fetch)
+				if (item.$ref && !item.spread && !item.overUnder) {
+					continue
+				}
+				
+				// Spread is from home team's perspective:
+				// - Negative value = home team favored (e.g., -6.5 means home team favored by 6.5)
+				// - Positive value = away team favored (e.g., +3 means away team favored by 3)
+				if (item.spread !== undefined && spread === null) {
+					spread = Number(item.spread)
+				}
+				
+				// Over/under is the total points line
+				if (item.overUnder !== undefined && overUnder === null) {
+					overUnder = Number(item.overUnder)
+				}
+				
+				// If we found both values, we're done
+				if (spread !== null && overUnder !== null) {
+					break
+				}
+			}
+			
+			// Return result if we have at least one value
+			if (spread !== null || overUnder !== null) {
+				return { spread, overUnder }
+			}
+			
+			return null
+		} catch (error) {
+			console.error(`Error fetching odds for game ${eventId}:`, error)
+			// Return null instead of throwing - odds may not be available
+			return null
+		}
+	}
+
+	/**
 	 * Fetch both AFC and NFC standings
 	 */
 	async getAllStandings(

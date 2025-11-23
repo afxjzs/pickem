@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useAuth } from "@/lib/contexts/AuthContext"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
@@ -43,12 +44,12 @@ export default function DashboardPage() {
 								<p className="text-gray-600 mb-4">
 									Browse teams, games, standings, and season information
 								</p>
-								<a
+								<Link
 									href="/data"
 									className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
 								>
 									View Data
-								</a>
+								</Link>
 							</div>
 						</div>
 
@@ -61,12 +62,12 @@ export default function DashboardPage() {
 								<p className="text-gray-600 mb-4">
 									Make weekly NFL picks with confidence points
 								</p>
-								<a
+								<Link
 									href="/picks"
 									className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
 								>
 									Make Picks
-								</a>
+								</Link>
 							</div>
 						</div>
 
@@ -79,13 +80,12 @@ export default function DashboardPage() {
 								<p className="text-gray-600 mb-4">
 									View standings and track your performance
 								</p>
-								<button
-									disabled
-									className="bg-gray-400 text-white px-4 py-2 rounded-md text-sm font-medium cursor-not-allowed"
-									title="Coming soon"
+								<Link
+									href="/leaderboard"
+									className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors inline-block"
 								>
-									Coming Soon
-								</button>
+									View Leaderboard
+								</Link>
 							</div>
 						</div>
 					</div>

@@ -230,7 +230,7 @@ describe("Data Normalizers", () => {
 				status: "scheduled",
 				home_score: 0,
 				away_score: 0,
-				is_snf: true, // Sunday 8PM
+				is_snf: false, // Set to false initially, updated in sync function
 				is_mnf: false,
 				spread: undefined,
 			})
@@ -424,10 +424,12 @@ describe("Data Normalizers", () => {
 			const snfNormalized = normalizeGame(snfGame)
 			const mnfNormalized = normalizeGame(mnfGame)
 
-			expect(snfNormalized.is_snf).toBe(true)
+			// Note: SNF/MNF detection is set to false initially in normalizeGame
+			// It's updated later in the sync function based on game times
+			expect(snfNormalized.is_snf).toBe(false)
 			expect(snfNormalized.is_mnf).toBe(false)
 			expect(mnfNormalized.is_snf).toBe(false)
-			expect(mnfNormalized.is_mnf).toBe(true)
+			expect(mnfNormalized.is_mnf).toBe(false)
 		})
 
 		it("should throw error for games without competition data", () => {

@@ -1,11 +1,28 @@
 import { NextRequest } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@supabase/supabase-js"
 import { createSuccessResponse, handleAPIError } from "@/lib/api/utils"
 import { Score, WeekStanding, SeasonStanding } from "@/lib/types/database"
 
 export async function GET(request: NextRequest) {
 	try {
-		const supabase = await createClient()
+		// Use service role key for scores (public leaderboard data, bypasses RLS)
+		const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+		const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+		
+		if (!supabaseUrl || !supabaseServiceKey) {
+			return handleAPIError(
+				new Error("Missing Supabase configuration"),
+				"fetch scores",
+				500
+			)
+		}
+
+		const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+			auth: {
+				autoRefreshToken: false,
+				persistSession: false,
+			},
+		})
 		
 		// Get query parameters
 		const { searchParams } = new URL(request.url)
@@ -60,16 +77,22 @@ export async function GET(request: NextRequest) {
 			})
 
 		} else {
-			// Get season standings
+			// Get season standings - include ALL users
+			// First fetch all users
+			const { data: allUsers, error: usersError } = await supabase
+				.from("users")
+				.select("id, display_name")
+				.order("display_name", { ascending: true })
+
+			if (usersError) {
+				console.error("Database error fetching users:", usersError)
+				return handleAPIError(new Error("Failed to fetch users"), "fetch scores")
+			}
+
+			// Then fetch all scores for the season
 			const { data: seasonScores, error: seasonError } = await supabase
 				.from("scores")
-				.select(`
-					*,
-					users!inner(
-						id,
-						display_name
-					)
-				`)
+				.select("*")
 				.eq("season", season)
 
 			if (seasonError) {
@@ -77,7 +100,7 @@ export async function GET(request: NextRequest) {
 				return handleAPIError(new Error("Failed to fetch season scores"), "fetch scores")
 			}
 
-			// Aggregate scores by user
+			// Aggregate scores by user - start with ALL users
 			const userScores = new Map<string, {
 				user_id: string
 				display_name: string
@@ -87,6 +110,19 @@ export async function GET(request: NextRequest) {
 				total_picks: number
 			}>()
 
+			// Initialize all users with 0 scores
+			allUsers?.forEach((user) => {
+				userScores.set(user.id, {
+					user_id: user.id,
+					display_name: user.display_name || "Unknown User",
+					total_points: 0,
+					weeks_played: 0,
+					total_correct_picks: 0,
+					total_picks: 0
+				})
+			})
+
+			// Process scores and update user data
 			seasonScores?.forEach(score => {
 				const existing = userScores.get(score.user_id)
 				if (existing) {
@@ -94,28 +130,27 @@ export async function GET(request: NextRequest) {
 					existing.weeks_played += 1
 					existing.total_correct_picks += score.correct_picks
 					existing.total_picks += score.total_picks
-				} else {
-					userScores.set(score.user_id, {
-						user_id: score.user_id,
-						display_name: score.users?.display_name || "Unknown User",
-						total_points: score.points,
-						weeks_played: 1,
-						total_correct_picks: score.correct_picks,
-						total_picks: score.total_picks
-					})
 				}
 			})
 
 			// Convert to array and sort by total points
 			const seasonStandings: SeasonStanding[] = Array.from(userScores.values())
-				.map(userScore => ({
-					user_id: userScore.user_id,
-					display_name: userScore.display_name,
-					total_points: userScore.total_points,
-					weeks_played: userScore.weeks_played,
-					average_points: userScore.weeks_played > 0 ? userScore.total_points / userScore.weeks_played : 0,
-					rank: 0 // Will be set below
-				}))
+				.map(userScore => {
+					const correctPicksPercentage = userScore.total_picks > 0
+						? Math.round((userScore.total_correct_picks / userScore.total_picks) * 10000) / 100 // Round to 2 decimal places
+						: 0
+					return {
+						user_id: userScore.user_id,
+						display_name: userScore.display_name,
+						total_points: userScore.total_points,
+						weeks_played: userScore.weeks_played,
+						average_points: userScore.weeks_played > 0 ? userScore.total_points / userScore.weeks_played : 0,
+						total_picks: userScore.total_picks,
+						correct_picks: userScore.total_correct_picks,
+						correct_picks_percentage: correctPicksPercentage,
+						rank: 0 // Will be set below
+					}
+				})
 				.sort((a, b) => b.total_points - a.total_points)
 
 			// Set rankings

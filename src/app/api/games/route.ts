@@ -24,8 +24,15 @@ export async function GET(request: NextRequest) {
 			return handleAPIError(new Error(`Invalid team abbreviation: ${team}`), "fetch games")
 		}
 
-		// Sync games from ESPN API to database
+		// Sync games from ESPN API to database (with smart caching)
+		// This will only sync if data is stale or first time
 		await dataSync.syncGames(parseInt(season), weekNumber)
+
+		// Sync odds separately - these can change frequently and need more frequent updates
+		// Only sync if week is provided (to avoid syncing all games)
+		if (weekNumber !== undefined) {
+			await dataSync.syncGameOdds(parseInt(season), weekNumber)
+		}
 
 		// Also sync teams to ensure we have the latest team data
 		const teams = await dataSync.syncTeams()
