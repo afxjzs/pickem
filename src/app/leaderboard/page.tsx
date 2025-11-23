@@ -7,7 +7,6 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useAuth } from "@/lib/contexts/AuthContext"
 import { useRouter, useSearchParams } from "next/navigation"
-import Navigation from "@/components/layout/Navigation"
 import type { WeeklyPerformanceUser } from "@/app/api/leaderboard/route"
 import type { SeasonStanding } from "@/lib/types/database"
 import type { GroupPicksResponse, UserPickData } from "@/app/api/group-picks/route"
@@ -244,8 +243,6 @@ export default function LeaderboardPage() {
 
 	return (
 		<div className="min-h-screen bg-gray-50">
-			<Navigation />
-
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 				{/* Header */}
 				<div className="mb-6">

@@ -3,13 +3,10 @@ import SeasonInfo from "@/components/data/SeasonInfo"
 import TeamsDisplay from "@/components/data/TeamsDisplay"
 import GamesDisplay from "@/components/data/GamesDisplay"
 import StandingsDisplay from "@/components/data/StandingsDisplay"
-import Navigation from "@/components/layout/Navigation"
 
 export default function DataDashboardPage() {
 	return (
 		<div className="min-h-screen bg-gray-50">
-			<Navigation />
-
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 				{/* Header */}
 				<div className="mb-8">
