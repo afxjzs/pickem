@@ -19,7 +19,7 @@ interface UserPick {
 }
 
 function PicksPageContent() {
-	const { user } = useAuth()
+	const { user, loading: authLoading } = useAuth()
 	const router = useRouter()
 	const searchParams = useSearchParams()
 	const [games, setGames] = useState<GameWithTeams[]>([])
@@ -32,9 +32,40 @@ function PicksPageContent() {
 	const [message, setMessage] = useState<{ text: string; type: "success" | "error" | "info" } | null>(null)
 	const [currentWeek, setCurrentWeek] = useState<number | null>(null)
 	const [debugInfo, setDebugInfo] = useState<any>(null)
+	const [checkingOnboarding, setCheckingOnboarding] = useState(true)
 
 	// Available confidence points (1-16)
 	const confidencePoints = Array.from({ length: 16 }, (_, i) => i + 1)
+
+	// Check if user has completed onboarding
+	useEffect(() => {
+		if (!authLoading && !user) {
+			router.push("/signin")
+			return
+		}
+		if (user && !authLoading) {
+			const checkOnboarding = async () => {
+				try {
+					const response = await fetch("/api/users/me")
+					const data = await response.json()
+					if (data.success && data.data) {
+						if (!data.data.username) {
+							router.push("/onboarding")
+							return
+						}
+					} else {
+						router.push("/onboarding")
+						return
+					}
+				} catch (error) {
+					console.error("Error checking onboarding:", error)
+				} finally {
+					setCheckingOnboarding(false)
+				}
+			}
+			checkOnboarding()
+		}
+	}, [user, authLoading, router])
 
 	// Initialize week from URL or fetch current week
 	useEffect(() => {
@@ -88,10 +119,15 @@ function PicksPageContent() {
 	}, [user, season, week])
 
 	// Fetch picks after games are loaded
+	// Clear picks when week changes to avoid showing picks from other weeks
 	useEffect(() => {
 		if (user && games.length > 0) {
+			// Clear picks from other weeks first
+			setUserPicks([])
+			// Then fetch picks for current week
 			fetchUserPicks()
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [user, season, week, games.length])
 
 	const fetchGames = async () => {
@@ -157,22 +193,17 @@ function PicksPageContent() {
 					saved: true, // Picks from database are saved
 				}))
 				
-				// Merge with existing picks to preserve any unsaved changes
-				setUserPicks((prev) => {
-					const merged = new Map<string, UserPick>()
-					
-					// First, add all existing picks (preserve unsaved changes)
-					prev.forEach((pick) => {
-						merged.set(String(pick.gameId), pick)
-					})
-					
-					// Then, add/update picks from database (these override if they exist)
-					picks.forEach((pick) => {
-						merged.set(String(pick.gameId), pick)
-					})
-					
-					return Array.from(merged.values())
-				})
+				// Get current week's game IDs to filter picks
+				const currentWeekGameIds = new Set(games.map(g => String(g.id).trim()))
+				
+				// Only keep picks for current week's games (API should already filter, but be safe)
+				const filteredPicks = picks.filter(pick => 
+					currentWeekGameIds.has(String(pick.gameId).trim())
+				)
+				
+				// Replace picks entirely - API already filters by week, so we don't need to merge
+				// This ensures we don't show picks from other weeks
+				setUserPicks(filteredPicks)
 			}
 		} catch (error) {
 			console.error("Error fetching user picks:", error)
@@ -442,8 +473,14 @@ function PicksPageContent() {
 	}
 
 	const getUsedConfidencePoints = () => {
+		// Only count confidence points used for games in the current week
+		const currentWeekGameIds = new Set(games.map(g => String(g.id).trim()))
 		return userPicks
-			.filter((pick) => pick.confidencePoints > 0)
+			.filter((pick) => {
+				// Only include picks for games in the current week
+				const pickGameId = String(pick.gameId).trim()
+				return currentWeekGameIds.has(pickGameId) && pick.confidencePoints > 0
+			})
 			.map((pick) => pick.confidencePoints)
 	}
 
@@ -528,6 +565,19 @@ function PicksPageContent() {
 		}
 	}
 
+	if (authLoading || checkingOnboarding) {
+		return (
+			<div className="min-h-screen bg-gray-50 py-8">
+				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+					<div className="text-center">
+						<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+						<p className="mt-4 text-gray-600">Loading...</p>
+					</div>
+				</div>
+			</div>
+		)
+	}
+
 	if (!user) {
 		return (
 			<div className="min-h-screen bg-gray-50 py-8">
@@ -558,8 +608,6 @@ function PicksPageContent() {
 
 	return (
 		<div className="min-h-screen bg-gray-50">
-			<Navigation />
-
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 				{/* Header */}
 				<div className="mb-8">

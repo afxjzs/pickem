@@ -77,17 +77,20 @@ export async function GET(request: NextRequest) {
 			})
 
 		} else {
-			// Get season standings - include ALL users
+			// Get season standings - include only users who have completed onboarding (have username)
 			// First fetch all users
-			const { data: allUsers, error: usersError } = await supabase
+			const { data: allUsersRaw, error: usersError } = await supabase
 				.from("users")
-				.select("id, display_name")
+				.select("id, display_name, username")
 				.order("display_name", { ascending: true })
 
 			if (usersError) {
 				console.error("Database error fetching users:", usersError)
 				return handleAPIError(new Error("Failed to fetch users"), "fetch scores")
 			}
+
+			// Filter to only users with usernames (completed onboarding)
+			const allUsers = allUsersRaw?.filter(user => user.username && user.username.trim().length > 0) || []
 
 			// Then fetch all scores for the season
 			const { data: seasonScores, error: seasonError } = await supabase

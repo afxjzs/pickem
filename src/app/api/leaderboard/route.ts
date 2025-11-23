@@ -39,16 +39,19 @@ export async function GET(request: NextRequest) {
 		const { searchParams } = new URL(request.url)
 		const season = searchParams.get("season") || "2025"
 
-		// Fetch ALL users first (to include users without scores)
-		const { data: allUsers, error: usersError } = await supabase
+		// Fetch users who have completed onboarding (have username) - to include users without scores
+		const { data: allUsersRaw, error: usersError } = await supabase
 			.from("users")
-			.select("id, display_name")
+			.select("id, display_name, username")
 			.order("display_name", { ascending: true })
 
 		if (usersError) {
 			console.error("Database error fetching users:", usersError)
 			return handleAPIError(new Error("Failed to fetch users"), "fetch leaderboard")
 		}
+
+		// Filter to only users with usernames (completed onboarding)
+		const allUsers = allUsersRaw?.filter(user => user.username && user.username.trim().length > 0) || []
 
 		// Fetch all scores for the season
 		const { data: allScores, error: scoresError } = await supabase

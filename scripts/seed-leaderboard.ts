@@ -132,17 +132,14 @@ async function createTestUser(
 }
 
 /**
- * Fetch all previous games (for creating picks)
- * Includes all games that have started (not just final) so users can have picks for all weeks
+ * Fetch all games for creating picks
+ * Creates picks for ALL games in the database (regardless of start time)
  */
 async function fetchPreviousGames(): Promise<Game[]> {
-	// Get current date to filter out future games
-	const now = new Date()
-	
 	const { data: games, error } = await supabase
 		.from("games")
 		.select("*")
-		.lte("start_time", now.toISOString()) // Only games that have started
+		// Include ALL games - both started and scheduled, all weeks
 		.order("season", { ascending: true })
 		.order("week", { ascending: true })
 		.order("start_time", { ascending: true })

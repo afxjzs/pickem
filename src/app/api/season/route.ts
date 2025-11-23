@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server"
-import { dataSync } from "@/lib/api/sync"
+import { espnAPI } from "@/lib/api/espn"
 import { createSuccessResponse, handleAPIError } from "@/lib/api/utils"
 
 export async function GET(request: NextRequest) {
 	try {
 		// Get current season info from ESPN API
-		const seasonInfo = await dataSync.getCurrentSeasonInfo()
+		const seasonInfo = await espnAPI.getCurrentSeasonInfo()
 
 		return createSuccessResponse(seasonInfo)
 	} catch (error) {

@@ -9,40 +9,64 @@ import { useAuth } from "@/lib/contexts/AuthContext"
 import { useRouter, useSearchParams } from "next/navigation"
 import type { WeeklyPerformanceUser } from "@/app/api/leaderboard/route"
 import type { SeasonStanding } from "@/lib/types/database"
-import type { GroupPicksResponse, UserPickData } from "@/app/api/group-picks/route"
-import type { Game, Pick } from "@/lib/types/database"
-import { getWinningTeam, isPickCorrect } from "@/lib/utils/scoring"
 
-type TabType = "weekly" | "overall" | "group-picks"
+type TabType = "weekly" | "overall"
 
 export default function LeaderboardPage() {
-	const { user } = useAuth()
+	const { user, loading: authLoading } = useAuth()
 	const router = useRouter()
 	const searchParams = useSearchParams()
-	const [activeTab, setActiveTab] = useState<TabType>("weekly")
+	// Initialize tab from URL parameter
+	const initialTab = (searchParams.get("tab") as TabType) || "weekly"
+	const [activeTab, setActiveTab] = useState<TabType>(initialTab)
 	const [weeklyData, setWeeklyData] = useState<{
 		users: WeeklyPerformanceUser[]
 		week_winners: Record<number, number>
 		season: string
 	} | null>(null)
 	const [overallData, setOverallData] = useState<SeasonStanding[] | null>(null)
-	const [groupPicksData, setGroupPicksData] = useState<GroupPicksResponse | null>(null)
-	const [groupPicksCache, setGroupPicksCache] = useState<Map<number, GroupPicksResponse>>(new Map())
 	const [loadingWeekly, setLoadingWeekly] = useState(true)
 	const [loadingOverall, setLoadingOverall] = useState(true)
-	const [loadingGroupPicks, setLoadingGroupPicks] = useState(false)
 	const [season, setSeason] = useState("2025")
-	const [groupPicksWeek, setGroupPicksWeek] = useState(1)
+	const [checkingOnboarding, setCheckingOnboarding] = useState(true)
 
-	// Initialize week from URL if present
+	// Check if user has completed onboarding
 	useEffect(() => {
-		const weekParam = searchParams.get("week")
-		if (weekParam) {
-			const weekNum = parseInt(weekParam, 10)
-			if (!isNaN(weekNum) && weekNum >= 1 && weekNum <= 18) {
-				setGroupPicksWeek(weekNum)
-				setActiveTab("group-picks")
+		if (!authLoading && !user) {
+			router.push("/signin")
+			return
+		}
+		if (user && !authLoading) {
+			const checkOnboarding = async () => {
+				try {
+					const response = await fetch("/api/users/me")
+					const data = await response.json()
+					if (data.success && data.data) {
+						if (!data.data.username) {
+							router.push("/onboarding")
+							return
+						}
+					} else {
+						router.push("/onboarding")
+						return
+					}
+				} catch (error) {
+					console.error("Error checking onboarding:", error)
+				} finally {
+					setCheckingOnboarding(false)
+				}
 			}
+			checkOnboarding()
+		}
+	}, [user, authLoading, router])
+
+	// Initialize tab from URL if present
+	useEffect(() => {
+		const tabParam = searchParams.get("tab") as TabType
+		
+		// Set tab from URL
+		if (tabParam && ["weekly", "overall"].includes(tabParam)) {
+			setActiveTab(tabParam)
 		}
 	}, [searchParams])
 
@@ -53,15 +77,6 @@ export default function LeaderboardPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [season])
 
-	// Fetch group picks when tab is active or week changes
-	useEffect(() => {
-		if (activeTab === "group-picks") {
-			// Always fetch when week changes, even if we have cache
-			// The fetchGroupPicks function will use cache if available
-			fetchGroupPicks()
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [activeTab, groupPicksWeek, season])
 
 	const fetchWeeklyData = async () => {
 		const needsLoading = !weeklyData
@@ -105,90 +120,6 @@ export default function LeaderboardPage() {
 		}
 	}
 
-	const fetchGroupPicks = async () => {
-		// Check cache first - but validate that cached data has spread information
-		const cached = groupPicksCache.get(groupPicksWeek)
-		if (cached) {
-			// Check if cached data has spread data for at least some games
-			// If all games are missing spread, fetch fresh data
-			const hasSpreadData = cached.games && cached.games.some(game => game.spread !== null && game.spread !== undefined)
-			
-			if (hasSpreadData) {
-				// Cached data has spread info, use it
-				setGroupPicksData(cached)
-				setLoadingGroupPicks(false)
-				return
-			} else {
-				// Cached data is missing spread, remove from cache and fetch fresh
-				setGroupPicksCache(prev => {
-					const newCache = new Map(prev)
-					newCache.delete(groupPicksWeek)
-					return newCache
-				})
-			}
-		}
-
-		// No cache or cache invalid - fetch from API
-		setLoadingGroupPicks(true)
-		setGroupPicksData(null) // Clear previous data while loading
-		
-		try {
-			// Add cache-busting parameter to ensure fresh data when spread might have been updated
-			const url = `/api/group-picks?season=${season}&week=${groupPicksWeek}&_t=${Date.now()}`
-			const response = await fetch(url, {
-				cache: 'no-store' // Don't use browser cache
-			})
-			
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`)
-			}
-			
-			const data = await response.json()
-			
-			if (data.success && data.data) {
-				setGroupPicksData(data.data)
-				// Cache the data for this week
-				setGroupPicksCache(prev => {
-					const newCache = new Map(prev)
-					newCache.set(groupPicksWeek, data.data)
-					return newCache
-				})
-			} else {
-				console.error("Failed to fetch group picks:", data.error || "Unknown error")
-				// Set empty data so UI shows "no data" message
-				setGroupPicksData({
-					games: [],
-					user_picks: [],
-					week: groupPicksWeek,
-					season
-				})
-			}
-		} catch (error) {
-			console.error("Error fetching group picks:", error)
-			// Set empty data on error so UI shows error state
-			setGroupPicksData({
-				games: [],
-				user_picks: [],
-				week: groupPicksWeek,
-				season
-			})
-		} finally {
-			setLoadingGroupPicks(false)
-		}
-	}
-
-	const handleGroupPicksWeekChange = (newWeek: number) => {
-		if (newWeek === groupPicksWeek) {
-			return // Already on this week
-		}
-		
-		setGroupPicksWeek(newWeek)
-		// Clear data immediately when switching weeks so old data doesn't show
-		setGroupPicksData(null)
-		setLoadingGroupPicks(true)
-		router.push(`/leaderboard?tab=group-picks&week=${newWeek}`, { scroll: false })
-	}
-
 	const isCurrentUser = (userId: string) => {
 		return user?.id === userId
 	}
@@ -200,45 +131,15 @@ export default function LeaderboardPage() {
 
 	const allWeeks = Array.from({ length: 18 }, (_, i) => i + 1)
 
-	// Helper functions for Group Picks tab
-	const getFavoredTeam = (game: Game): string | null => {
-		// If spread is null/undefined, we can't determine favored team
-		if (game.spread === null || game.spread === undefined) {
-			return null
-		}
-		const spread = Number(game.spread)
-		// Spread is from home team's perspective:
-		// Negative = home team favored (e.g., -6.5 means home team favored by 6.5)
-		// Positive = away team favored (e.g., +3 means away team favored by 3)
-		// Zero = pick 'em
-		if (spread < 0) {
-			return game.home_team
-		} else if (spread > 0) {
-			return game.away_team
-		}
-		return null // Pick 'em
-	}
-
-	const isFavoredPick = (game: Game, pickedTeam: string): boolean => {
-		const favoredTeam = getFavoredTeam(game)
-		if (favoredTeam === null) {
-			return false
-		}
-		return pickedTeam === favoredTeam
-	}
-
-	const getUserPickForGame = (userPicks: UserPickData, gameId: string) => {
-		return userPicks.picks.find(p => p.game_id === gameId)
-	}
-
-	const getTeamAbbreviation = (game: Game, pickedTeam: string): string => {
-		if (pickedTeam === game.home_team) {
-			return game.home_team
-		}
-		if (pickedTeam === game.away_team) {
-			return game.away_team
-		}
-		return pickedTeam
+	if (authLoading || checkingOnboarding) {
+		return (
+			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
+				<div className="text-center">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+					<p className="mt-4 text-gray-600">Loading...</p>
+				</div>
+			</div>
+		)
 	}
 
 	return (
@@ -272,16 +173,6 @@ export default function LeaderboardPage() {
 							}`}
 						>
 							Overall Standings
-						</button>
-						<button
-							onClick={() => setActiveTab("group-picks")}
-							className={`py-4 px-1 border-b-2 font-medium text-sm ${
-								activeTab === "group-picks"
-									? "border-blue-500 text-blue-600"
-									: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-							}`}
-						>
-							Group Picks
 						</button>
 					</nav>
 				</div>
@@ -450,208 +341,6 @@ export default function LeaderboardPage() {
 					</div>
 				)}
 
-				{/* Group Picks Tab */}
-				{activeTab === "group-picks" && (
-					<div>
-						{/* Week Selector */}
-						<div className="mb-6 bg-white rounded-lg shadow p-4">
-							<div className="flex flex-wrap gap-2">
-								<span className="text-sm font-medium text-gray-700 mr-2">Week:</span>
-								{allWeeks.map(weekNum => (
-									<button
-										key={weekNum}
-										onClick={() => handleGroupPicksWeekChange(weekNum)}
-										className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-											groupPicksWeek === weekNum
-												? "bg-blue-600 text-white"
-												: "bg-gray-100 text-gray-700 hover:bg-gray-200"
-										}`}
-									>
-										{weekNum}
-									</button>
-								))}
-							</div>
-						</div>
-
-						{/* Group Picks Table */}
-						{loadingGroupPicks ? (
-							<div className="bg-white rounded-lg shadow p-8 text-center">
-								<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-								<p className="mt-4 text-gray-600">Loading picks...</p>
-							</div>
-						) : groupPicksData && groupPicksData.games.length > 0 ? (
-							<div className="bg-white rounded-lg shadow overflow-hidden">
-								<div className="overflow-x-auto">
-									<table className="min-w-full divide-y divide-gray-200">
-										<thead className="bg-gray-50">
-											{/* Game Header Row */}
-											<tr>
-												<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10 border-r border-gray-200">
-													Team Name
-												</th>
-												{groupPicksData.games.map((game) => (
-													<th
-														key={game.id}
-														className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[70px]"
-													>
-														<div className="flex flex-col">
-															<span>{game.away_team}</span>
-															<span className="text-gray-400">@</span>
-															<span>{game.home_team}</span>
-														</div>
-													</th>
-												))}
-												<th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-													Points
-												</th>
-											</tr>
-											{/* Favored Row */}
-											<tr className="bg-gray-100">
-												<td className="px-4 py-2 text-xs font-medium text-gray-600 sticky left-0 bg-gray-100 z-10 border-r border-gray-200">
-													Favored
-												</td>
-												{groupPicksData.games.map((game) => {
-													const favoredTeam = getFavoredTeam(game)
-													return (
-														<td
-															key={game.id}
-															className="px-2 py-2 text-center text-xs text-gray-600 font-semibold"
-														>
-															{favoredTeam || "--"}
-														</td>
-													)
-												})}
-												<td></td>
-											</tr>
-											{/* Spread Row */}
-											<tr className="bg-gray-100">
-												<td className="px-4 py-2 text-xs font-medium text-gray-600 sticky left-0 bg-gray-100 z-10 border-r border-gray-200">
-													Spread
-												</td>
-												{groupPicksData.games.map((game) => {
-													const spread = game.spread
-													return (
-														<td
-															key={game.id}
-															className="px-2 py-2 text-center text-xs text-gray-600"
-														>
-															{spread !== null && spread !== undefined
-																? `${spread > 0 ? "+" : ""}${spread}`
-																: "--"}
-														</td>
-													)
-												})}
-												<td></td>
-											</tr>
-											{/* Underdog Row */}
-											<tr className="bg-gray-100">
-												<td className="px-4 py-2 text-xs font-medium text-gray-600 sticky left-0 bg-gray-100 z-10 border-r border-gray-200">
-													Underdog
-												</td>
-												{groupPicksData.games.map((game) => {
-													const favoredTeam = getFavoredTeam(game)
-													const underdogTeam = favoredTeam === game.home_team 
-														? game.away_team 
-														: favoredTeam === game.away_team 
-															? game.home_team 
-															: null
-													return (
-														<td
-															key={game.id}
-															className="px-2 py-2 text-center text-xs text-gray-600"
-														>
-															{underdogTeam || "--"}
-														</td>
-													)
-												})}
-												<td></td>
-											</tr>
-										</thead>
-										<tbody className="bg-white divide-y divide-gray-200">
-											{groupPicksData.user_picks.map((userPicks) => {
-												const isUser = isCurrentUser(userPicks.user_id)
-												return (
-													<tr
-														key={userPicks.user_id}
-														className={isUser ? "bg-yellow-50" : ""}
-													>
-														<td className={`px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 z-10 border-r border-gray-200 ${
-															isUser ? "bg-yellow-50" : "bg-white"
-														}`}>
-															{userPicks.display_name}
-														</td>
-														{groupPicksData.games.map((game) => {
-															const pick = getUserPickForGame(userPicks, game.id)
-															if (!pick) {
-																return (
-																	<td
-																		key={game.id}
-																		className="px-2 py-3 text-center text-sm text-gray-400"
-																	>
-																		--
-																	</td>
-																)
-															}
-
-															const teamAbbr = getTeamAbbreviation(game, pick.picked_team)
-															
-															// Explicitly check if game is final before determining correctness
-															// Only show correct/incorrect for games that have actually finished
-															const isGameFinal = game.status === "final" && 
-																game.home_score !== null && 
-																game.home_score !== undefined &&
-																game.away_score !== null && 
-																game.away_score !== undefined
-															
-															// Determine if pick is correct/incorrect (only for completed games)
-															let pickCorrect: boolean | null = null
-															if (isGameFinal) {
-																pickCorrect = isPickCorrect(pick as Pick, game)
-															}
-															// If game is not final, pickCorrect remains null
-															
-															// Color logic:
-															// - If game is final: green for correct, red for incorrect
-															// - If game not final: gray/black (neutral) - NO COLORING BASED ON FAVORITE/UNDERDOG
-															let pickColor = "text-gray-700" // Default: neutral gray/black
-															if (pickCorrect === true) {
-																pickColor = "text-green-600" // Correct pick
-															} else if (pickCorrect === false) {
-																pickColor = "text-red-600" // Incorrect pick
-															}
-															// If pickCorrect is null, game hasn't finished, so keep gray/black
-
-															return (
-																<td
-																	key={game.id}
-																	className={`px-2 py-3 text-center text-sm font-medium ${pickColor}`}
-																>
-																	<div className="flex flex-col">
-																		<span>{teamAbbr}</span>
-																		<span className="text-xs">({pick.confidence_points})</span>
-																	</div>
-																</td>
-															)
-														})}
-														<td className={`px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 text-center ${
-															isUser ? "bg-yellow-50" : ""
-														}`}>
-															{userPicks.weekly_points || 0}
-														</td>
-													</tr>
-												)
-											})}
-										</tbody>
-									</table>
-								</div>
-							</div>
-						) : (
-							<div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-								No picks data available for this week.
-							</div>
-						)}
-					</div>
-				)}
 			</div>
 		</div>
 	)

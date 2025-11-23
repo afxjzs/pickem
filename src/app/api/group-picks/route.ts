@@ -147,6 +147,110 @@ export async function GET(request: NextRequest) {
 			return handleAPIError(new Error("Invalid week parameter"), "fetch group picks", 400)
 		}
 
+		// For current week, always sync games to get latest status (scheduled -> live -> final)
+		// This ensures live games are properly marked as "live"
+		const { espnAPI } = await import("@/lib/api/espn")
+		const seasonInfo = await espnAPI.getCurrentSeasonInfo()
+		const isCurrentWeek = seasonInfo.currentWeek === weekNumber && seasonInfo.season === parseInt(season)
+		
+		if (isCurrentWeek) {
+			// Force sync games for current week to get latest status
+			// Bypass cache check since game statuses change in real-time
+			try {
+				const { espnAPI: espn } = await import("@/lib/api/espn")
+				const { normalizeGames } = await import("@/lib/api/normalizers")
+				const { dataSync } = await import("@/lib/api/sync")
+				const { recalculateUserWeekScore } = await import("@/lib/utils/scoring")
+				
+				// Force fetch from ESPN (bypass cache)
+				console.log(`🔄 Force syncing games for current week ${weekNumber} to get latest status`)
+				const espnGames = await espn.getSchedule(parseInt(season), weekNumber)
+				const games = normalizeGames(espnGames)
+				
+				// Sync to database to update game statuses (scheduled -> live -> final)
+				// Use service role client to ensure updates work
+				const { createClient: createSupabaseClient } = await import("@supabase/supabase-js")
+				const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+				const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+				
+				if (supabaseUrl && supabaseServiceKey) {
+					const serviceSupabase = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
+						auth: {
+							autoRefreshToken: false,
+							persistSession: false,
+						},
+					})
+					
+					// Track if any games have final status (to trigger score recalculation)
+					let hasFinalGames = false
+					
+					// Update each game's status directly
+					for (const game of games) {
+						const { data: existing } = await serviceSupabase
+							.from("games")
+							.select("id, status")
+							.eq("espn_id", game.espn_id)
+							.single()
+						
+						if (existing) {
+							// Check if game is final (for score recalculation)
+							if (game.status === "final" && 
+								game.home_score !== null && 
+								game.away_score !== null) {
+								hasFinalGames = true
+							}
+							
+							// Update status, scores, and start_time
+							await serviceSupabase
+								.from("games")
+								.update({
+									status: game.status,
+									home_score: game.home_score,
+									away_score: game.away_score,
+									start_time: game.start_time,
+								})
+								.eq("id", existing.id)
+						}
+					}
+					
+					// If any games are final, recalculate scores for all users
+					// This ensures scores are always up-to-date when viewing current week
+					if (hasFinalGames) {
+						console.log(`📊 Recalculating scores for all users (week ${weekNumber})`)
+						
+						// Fetch all users
+						const { data: allUsers, error: usersError } = await serviceSupabase
+							.from("users")
+							.select("id")
+						
+						if (!usersError && allUsers) {
+							// Recalculate scores for each user
+							for (const user of allUsers) {
+								try {
+									await recalculateUserWeekScore(
+										serviceSupabase,
+										user.id,
+										weekNumber,
+										season
+									)
+								} catch (error) {
+									console.error(`Error recalculating score for user ${user.id}:`, error)
+									// Continue with other users even if one fails
+								}
+							}
+							console.log(`✓ Recalculated scores for ${allUsers.length} users`)
+						}
+					}
+				} else {
+					// Fallback to dataSync method
+					await dataSync.syncGamesToDatabase(games)
+				}
+			} catch (error) {
+				console.error("Error syncing games for current week (non-fatal):", error)
+				// Continue even if sync fails
+			}
+		}
+
 		// Fetch all games for this week first to check if week is complete
 		let { data: games, error: gamesError } = await supabase
 			.from("games")
@@ -217,17 +321,19 @@ export async function GET(request: NextRequest) {
 			away_team_data: teamMap.get(game.away_team) || null,
 		}))
 
-		// Fetch all picks for this week
-		const gameIds = enrichedGames.map(g => g.id)
-		if (gameIds.length === 0) {
-			return createSuccessResponse({
-				games: enrichedGames,
-				user_picks: [],
-				week: weekNumber,
-				season,
-			})
+		// Fetch ALL users first (to include users without picks)
+		const { data: allUsers, error: usersError } = await supabase
+			.from("users")
+			.select("id, display_name")
+			.order("display_name", { ascending: true })
+
+		if (usersError) {
+			console.error("Error fetching users:", usersError)
+			return handleAPIError(usersError, "fetch users")
 		}
 
+		// Fetch all picks for this week
+		const gameIds = enrichedGames.map(g => g.id)
 		const { data: picks, error: picksError } = await supabase
 			.from("picks")
 			.select(`
@@ -237,7 +343,7 @@ export async function GET(request: NextRequest) {
 					display_name
 				)
 			`)
-			.in("game_id", gameIds)
+			.in("game_id", gameIds.length > 0 ? gameIds : [])
 
 		if (picksError) {
 			return handleAPIError(picksError, "fetch picks")
@@ -261,7 +367,7 @@ export async function GET(request: NextRequest) {
 			console.error("Error fetching weekly scores:", scoresError)
 		}
 
-		// Build user picks map
+		// Build user picks map - start with ALL users
 		const userPicksMap = new Map<string, {
 			user_id: string
 			display_name: string
@@ -274,7 +380,18 @@ export async function GET(request: NextRequest) {
 			weekly_rank: number
 		}>()
 
-		// Process picks
+		// Initialize all users with empty picks
+		allUsers?.forEach((user) => {
+			userPicksMap.set(user.id, {
+				user_id: user.id,
+				display_name: user.display_name || "Unknown User",
+				picks: [],
+				weekly_points: 0,
+				weekly_rank: 0,
+			})
+		})
+
+		// Process picks - add picks to existing user entries
 		picks?.forEach((pick: any) => {
 			const userId = pick.user_id
 			const existing = userPicksMap.get(userId)
@@ -286,6 +403,7 @@ export async function GET(request: NextRequest) {
 					confidence_points: pick.confidence_points,
 				})
 			} else {
+				// User not in allUsers list (shouldn't happen, but handle gracefully)
 				userPicksMap.set(userId, {
 					user_id: userId,
 					display_name: pick.users?.display_name || "Unknown User",

@@ -1,57 +1,154 @@
 "use client"
 
-// src/app/leaderboard/picks/page.tsx
-// Group Picks View - Shows all users' picks for a specific week
+// src/app/group-picks/[week]/page.tsx
+// Group Picks view - shows all users' picks for a specific week
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
+import { useState, useEffect, useMemo } from "react"
 import { useAuth } from "@/lib/contexts/AuthContext"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import type { GroupPicksResponse, UserPickData } from "@/app/api/group-picks/route"
-import type { Game, Team, Pick } from "@/lib/types/database"
-import { isPickCorrect } from "@/lib/utils/scoring"
+import type { Game, Pick } from "@/lib/types/database"
+import { getWinningTeam, isPickCorrect } from "@/lib/utils/scoring"
 
 export default function GroupPicksPage() {
 	const { user } = useAuth()
 	const router = useRouter()
-	const searchParams = useSearchParams()
-	const [week, setWeek] = useState(1)
+	const params = useParams()
+	const [groupPicksData, setGroupPicksData] = useState<GroupPicksResponse | null>(null)
+	const [groupPicksCache, setGroupPicksCache] = useState<Map<number, GroupPicksResponse>>(new Map())
+	const [loadingGroupPicks, setLoadingGroupPicks] = useState(false)
 	const [season, setSeason] = useState("2025")
-	const [data, setData] = useState<GroupPicksResponse | null>(null)
-	const [loading, setLoading] = useState(true)
+	const [groupPicksWeek, setGroupPicksWeek] = useState<number | null>(null)
+	const [currentWeek, setCurrentWeek] = useState<number | null>(null)
 
+	const allWeeks = useMemo(() => Array.from({ length: 18 }, (_, i) => i + 1), [])
+
+	// Initialize week from URL or fetch current week on mount
 	useEffect(() => {
-		const weekParam = searchParams.get("week")
-		if (weekParam) {
+		const weekParam = params?.week as string
+		
+		if (weekParam === "current-week") {
+			// Fetch current week and redirect - don't set week yet to avoid loading week 1
+			const fetchCurrentWeek = async () => {
+				try {
+					const response = await fetch('/api/season')
+					const data = await response.json()
+					if (data.success && data.data?.currentWeek) {
+						setCurrentWeek(data.data.currentWeek)
+						// Redirect immediately without setting state to avoid loading week 1
+						router.replace(`/group-picks/${data.data.currentWeek}`, { scroll: false })
+					}
+				} catch (error) {
+					console.error("Error fetching current week:", error)
+				}
+			}
+			fetchCurrentWeek()
+		} else if (weekParam) {
 			const weekNum = parseInt(weekParam, 10)
 			if (!isNaN(weekNum) && weekNum >= 1 && weekNum <= 18) {
-				setWeek(weekNum)
+				setGroupPicksWeek(weekNum)
+			} else {
+				// Invalid week in URL, fetch current week
+				const fetchCurrentWeek = async () => {
+					try {
+						const response = await fetch('/api/season')
+						const data = await response.json()
+						if (data.success && data.data?.currentWeek) {
+							setCurrentWeek(data.data.currentWeek)
+							setGroupPicksWeek(data.data.currentWeek)
+							router.replace(`/group-picks/${data.data.currentWeek}`, { scroll: false })
+						}
+					} catch (error) {
+						console.error("Error fetching current week:", error)
+					}
+				}
+				fetchCurrentWeek()
 			}
+		} else {
+			// No week in URL, fetch current week and redirect
+			const fetchCurrentWeek = async () => {
+				try {
+					const response = await fetch('/api/season')
+					const data = await response.json()
+					if (data.success && data.data?.currentWeek) {
+						setCurrentWeek(data.data.currentWeek)
+						setGroupPicksWeek(data.data.currentWeek)
+						router.replace(`/group-picks/${data.data.currentWeek}`, { scroll: false })
+					}
+				} catch (error) {
+					console.error("Error fetching current week:", error)
+				}
+			}
+			fetchCurrentWeek()
 		}
-	}, [searchParams])
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [params?.week]) // Run when week param changes
 
+	// Fetch group picks when week changes (only if week is valid)
 	useEffect(() => {
-		fetchGroupPicks()
-	}, [week, season])
+		if (groupPicksWeek !== null && groupPicksWeek >= 1 && groupPicksWeek <= 18) {
+			fetchGroupPicks()
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [groupPicksWeek, season])
 
 	const fetchGroupPicks = async () => {
+		// Check cache first
+		const cached = groupPicksCache.get(groupPicksWeek)
+		if (cached) {
+			// Check if cached data has spread information
+			const hasSpreadData = cached.games.some(g => g.spread !== null && g.spread !== undefined)
+			if (hasSpreadData || cached.games.every(g => g.status === "final")) {
+				setGroupPicksData(cached)
+				setLoadingGroupPicks(false)
+				return
+			} else {
+				// Remove from cache if spread data is missing
+				setGroupPicksCache(prev => {
+					const newCache = new Map(prev)
+					newCache.delete(groupPicksWeek)
+					return newCache
+				})
+			}
+		}
+
+		setLoadingGroupPicks(true)
+		setGroupPicksData(null) // Clear old data immediately
+
 		try {
-			setLoading(true)
-			const response = await fetch(`/api/group-picks?season=${season}&week=${week}`)
-			const result = await response.json()
-			if (result.success) {
-				setData(result.data)
+			const url = `/api/group-picks?season=${season}&week=${groupPicksWeek}&_t=${Date.now()}`
+			const response = await fetch(url, {
+				cache: 'no-store',
+			})
+			const data = await response.json()
+
+			if (data.success && data.data) {
+				setGroupPicksData(data.data)
+				// Cache the data
+				setGroupPicksCache(prev => {
+					const newCache = new Map(prev)
+					newCache.set(groupPicksWeek, data.data)
+					return newCache
+				})
+			} else {
+				console.error("Failed to fetch group picks:", data.message)
 			}
 		} catch (error) {
 			console.error("Error fetching group picks:", error)
 		} finally {
-			setLoading(false)
+			setLoadingGroupPicks(false)
 		}
 	}
 
-	const handleWeekChange = (newWeek: number) => {
-		setWeek(newWeek)
-		router.push(`/leaderboard/picks?week=${newWeek}`, { scroll: false })
+	const handleGroupPicksWeekChange = (newWeek: number) => {
+		if (newWeek === groupPicksWeek) {
+			return
+		}
+		setGroupPicksWeek(newWeek)
+		router.push(`/group-picks/${newWeek}`, { scroll: false })
+		// Clear data immediately when switching weeks
+		setGroupPicksData(null)
+		setLoadingGroupPicks(true)
 	}
 
 	const isCurrentUser = (userId: string) => {
@@ -62,86 +159,70 @@ export default function GroupPicksPage() {
 		return userPicks.picks.find(p => p.game_id === gameId)
 	}
 
-	const getTeamAbbreviation = (game: Game, pickedTeam: string) => {
-		if (pickedTeam === game.home_team) {
-			return game.home_team
-		}
-		if (pickedTeam === game.away_team) {
-			return game.away_team
-		}
-		return pickedTeam
+	const getTeamAbbreviation = (game: Game, teamAbbr: string) => {
+		return teamAbbr
 	}
 
-	// Determine which team is favored based on spread
 	const getFavoredTeam = (game: Game): string | null => {
 		if (game.spread === null || game.spread === undefined) {
-			return null // Can't determine without spread
+			return null
 		}
-		const spread = Number(game.spread)
-		// Spread is from home team's perspective:
-		// Negative = home team favored (e.g., -6.5 means home team favored by 6.5)
-		// Positive = away team favored (e.g., +3 means away team favored by 3)
-		// Zero = pick 'em
-		if (spread < 0) {
+		// Spread is from home team's perspective
+		// Negative spread = home team favored
+		// Positive spread = away team favored
+		if (game.spread < 0) {
 			return game.home_team
-		} else if (spread > 0) {
+		} else if (game.spread > 0) {
 			return game.away_team
 		}
 		return null // Pick 'em
 	}
 
-	const isFavored = (game: Game, pickedTeam: string) => {
-		const favoredTeam = getFavoredTeam(game)
-		if (favoredTeam === null) {
-			return false // Can't determine, default to false
-		}
-		return pickedTeam === favoredTeam
-	}
-
 	return (
-		<div className="min-h-screen bg-gray-50">
-			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+		<div className="min-h-screen bg-gray-50 py-8">
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 				{/* Header */}
-				<div className="mb-6 flex justify-between items-center">
-					<div>
-						<h1 className="text-3xl font-bold text-gray-900 mb-2">Group Picks</h1>
-						<p className="text-gray-600">Season {season}</p>
-					</div>
-					<Link
-						href="/leaderboard"
-						className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-					>
-						View Leaderboard
-					</Link>
-				</div>
+				<div className="mb-8">
+					<h1 className="text-3xl font-bold text-gray-900 mb-4">
+						Group Picks
+					</h1>
+					<p className="text-gray-600 mb-6">
+						Season {season}
+					</p>
 
-				{/* Week Selector */}
-				<div className="mb-6 bg-white rounded-lg shadow p-4">
-					<div className="flex flex-wrap gap-2">
-						<span className="text-sm font-medium text-gray-700 mr-2">Week:</span>
-						{Array.from({ length: 18 }, (_, i) => i + 1).map(weekNum => (
-							<button
-								key={weekNum}
-								onClick={() => handleWeekChange(weekNum)}
-								className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-									week === weekNum
-										? "bg-blue-600 text-white"
-										: "bg-gray-100 text-gray-700 hover:bg-gray-200"
-								}`}
-							>
-								{weekNum}
-							</button>
-						))}
+					{/* Week Selector */}
+					<div className="mb-6 bg-white rounded-lg shadow p-4">
+						<div className="flex flex-wrap gap-2">
+							<span className="text-sm font-medium text-gray-700 mr-2">Week:</span>
+							{allWeeks.map(weekNum => (
+								<button
+									key={weekNum}
+									onClick={() => handleGroupPicksWeekChange(weekNum)}
+									className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+										groupPicksWeek === weekNum
+											? "bg-blue-600 text-white"
+											: "bg-gray-100 text-gray-700 hover:bg-gray-200"
+									}`}
+								>
+									{weekNum}
+								</button>
+							))}
+						</div>
 					</div>
 				</div>
 
 				{/* Group Picks Table */}
-				{loading ? (
+				{groupPicksWeek === null ? (
+					<div className="bg-white rounded-lg shadow p-8 text-center">
+						<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+						<p className="mt-4 text-gray-600">Loading...</p>
+					</div>
+				) : loadingGroupPicks ? (
 					<div className="bg-white rounded-lg shadow p-8 text-center">
 						<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
 						<p className="mt-4 text-gray-600">Loading picks...</p>
 					</div>
-				) : data && data.games.length > 0 ? (
+				) : groupPicksData && groupPicksData.games.length > 0 ? (
 					<div className="bg-white rounded-lg shadow overflow-hidden">
 						<div className="overflow-x-auto">
 							<table className="min-w-full divide-y divide-gray-200">
@@ -151,7 +232,7 @@ export default function GroupPicksPage() {
 										<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10 border-r border-gray-200">
 											Team Name
 										</th>
-										{data.games.map((game) => (
+										{groupPicksData.games.map((game) => (
 											<th
 												key={game.id}
 												className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[70px]"
@@ -164,7 +245,7 @@ export default function GroupPicksPage() {
 											</th>
 										))}
 										<th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-											Total Points
+											Points
 										</th>
 									</tr>
 									{/* Favored Row */}
@@ -172,7 +253,7 @@ export default function GroupPicksPage() {
 										<td className="px-4 py-2 text-xs font-medium text-gray-600 sticky left-0 bg-gray-100 z-10 border-r border-gray-200">
 											Favored
 										</td>
-										{data.games.map((game) => {
+										{groupPicksData.games.map((game) => {
 											const favoredTeam = getFavoredTeam(game)
 											return (
 												<td
@@ -190,7 +271,7 @@ export default function GroupPicksPage() {
 										<td className="px-4 py-2 text-xs font-medium text-gray-600 sticky left-0 bg-gray-100 z-10 border-r border-gray-200">
 											Spread
 										</td>
-										{data.games.map((game) => {
+										{groupPicksData.games.map((game) => {
 											const spread = game.spread
 											return (
 												<td
@@ -210,7 +291,7 @@ export default function GroupPicksPage() {
 										<td className="px-4 py-2 text-xs font-medium text-gray-600 sticky left-0 bg-gray-100 z-10 border-r border-gray-200">
 											Underdog
 										</td>
-										{data.games.map((game) => {
+										{groupPicksData.games.map((game) => {
 											const favoredTeam = getFavoredTeam(game)
 											const underdogTeam = favoredTeam === game.home_team 
 												? game.away_team 
@@ -228,16 +309,44 @@ export default function GroupPicksPage() {
 										})}
 										<td></td>
 									</tr>
+									{/* Score Row - Show scores for live/final games */}
+									<tr className="bg-gray-50">
+										<td className="px-4 py-2 text-xs font-medium text-gray-600 sticky left-0 bg-gray-50 z-10 border-r border-gray-200">
+											Score
+										</td>
+										{groupPicksData.games.map((game) => {
+											const hasScores = game.home_score !== null && 
+												game.home_score !== undefined && 
+												game.away_score !== null && 
+												game.away_score !== undefined
+											const isLiveOrFinal = game.status === "live" || game.status === "final"
+											
+											return (
+												<td
+													key={game.id}
+													className={`px-2 py-2 text-center text-xs font-semibold ${
+														game.status === "live" ? "text-red-600" : 
+														game.status === "final" ? "text-gray-900" : 
+														"text-gray-400"
+													}`}
+												>
+													{isLiveOrFinal && hasScores ? (
+														<div className="flex flex-col">
+															<span>{game.away_score}</span>
+															<span className="text-gray-400">-</span>
+															<span>{game.home_score}</span>
+														</div>
+													) : (
+														"--"
+													)}
+												</td>
+											)
+										})}
+										<td></td>
+									</tr>
 								</thead>
 								<tbody className="bg-white divide-y divide-gray-200">
-									{[...data.user_picks].sort((a, b) => {
-										// Sort by weekly_points descending (highest first)
-										// If points are equal, sort alphabetically by name
-										if (b.weekly_points !== a.weekly_points) {
-											return b.weekly_points - a.weekly_points
-										}
-										return a.display_name.localeCompare(b.display_name)
-									}).map((userPicks) => {
+									{groupPicksData.user_picks.map((userPicks) => {
 										const isUser = isCurrentUser(userPicks.user_id)
 										return (
 											<tr
@@ -249,7 +358,7 @@ export default function GroupPicksPage() {
 												}`}>
 													{userPicks.display_name}
 												</td>
-												{data.games.map((game) => {
+												{groupPicksData.games.map((game) => {
 													// Current user can always see their own picks
 													// Other users' picks are only visible once game has started (live or final)
 													const gameHasStarted = game.status === "live" || game.status === "final"
@@ -325,7 +434,7 @@ export default function GroupPicksPage() {
 													
 													// Color logic:
 													// - If game is final: green for correct, red for incorrect
-													// - If game not final: gray/black (neutral)
+													// - If game not final: gray/black (neutral) - NO COLORING BASED ON FAVORITE/UNDERDOG
 													let pickColor = "text-gray-700" // Default: neutral gray/black
 													if (pickCorrect === true) {
 														pickColor = "text-green-600" // Correct pick
@@ -339,12 +448,17 @@ export default function GroupPicksPage() {
 															key={game.id}
 															className={`px-2 py-3 text-center text-sm font-medium ${pickColor}`}
 														>
-															{teamAbbr} ({pick.confidence_points})
+															<div className="flex flex-col">
+																<span>{teamAbbr}</span>
+																<span className="text-xs">({pick.confidence_points})</span>
+															</div>
 														</td>
 													)
 												})}
-												<td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 text-center">
-													{userPicks.weekly_points}
+												<td className={`px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 text-center ${
+													isUser ? "bg-yellow-50" : ""
+												}`}>
+													{userPicks.weekly_points || 0}
 												</td>
 											</tr>
 										)

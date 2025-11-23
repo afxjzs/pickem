@@ -11,11 +11,39 @@ export default function DashboardPage() {
 	const router = useRouter()
 	const [userStats, setUserStats] = useState<SeasonStanding | null>(null)
 	const [loadingStats, setLoadingStats] = useState(true)
+	const [checkingOnboarding, setCheckingOnboarding] = useState(true)
 	const [season] = useState("2025")
 
 	useEffect(() => {
 		if (!loading && !user) {
 			router.push("/signin")
+		}
+	}, [user, loading, router])
+
+	// Check if user has completed onboarding
+	useEffect(() => {
+		if (user && !loading) {
+			const checkOnboarding = async () => {
+				try {
+					const response = await fetch("/api/users/me")
+					const data = await response.json()
+					if (data.success && data.data) {
+						if (!data.data.username) {
+							router.push("/onboarding")
+							return
+						}
+					} else {
+						// User doesn't exist in users table, redirect to onboarding
+						router.push("/onboarding")
+						return
+					}
+				} catch (error) {
+					console.error("Error checking onboarding:", error)
+				} finally {
+					setCheckingOnboarding(false)
+				}
+			}
+			checkOnboarding()
 		}
 	}, [user, loading, router])
 
@@ -42,7 +70,7 @@ export default function DashboardPage() {
 		}
 	}
 
-	if (loading) {
+	if (loading || checkingOnboarding) {
 		return (
 			<div className="min-h-screen flex items-center justify-center">
 				<div className="text-lg">Loading...</div>

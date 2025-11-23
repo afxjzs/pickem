@@ -18,7 +18,7 @@ export function SignUpForm() {
 	// Redirect if already signed in
 	useEffect(() => {
 		if (user && !loading) {
-			router.push("/dashboard")
+			router.push("/onboarding")
 		}
 	}, [user, loading, router])
 
@@ -49,13 +49,13 @@ export function SignUpForm() {
 					console.error("Sign up error:", error)
 				}
 			} else {
-				setSuccess("Account created successfully! Redirecting to dashboard...")
+				setSuccess("Account created successfully! Redirecting to setup...")
 				// Clear form
 				setEmail("")
 				setPassword("")
-				// Redirect to dashboard after a short delay
+				// Redirect to onboarding after a short delay
 				setTimeout(() => {
-					router.push("/dashboard")
+					router.push("/onboarding")
 				}, 1500)
 			}
 		} catch (error) {

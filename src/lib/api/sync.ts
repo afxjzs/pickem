@@ -298,7 +298,7 @@ class DataSyncService {
 	/**
 	 * Sync games data to database
 	 */
-	private async syncGamesToDatabase(games: NormalizedGame[]): Promise<void> {
+	async syncGamesToDatabase(games: NormalizedGame[]): Promise<void> {
 		const supabase = await createClient()
 
 		for (const game of games) {
