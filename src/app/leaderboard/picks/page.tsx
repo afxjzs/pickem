@@ -167,7 +167,7 @@ export default function GroupPicksPage() {
 											</th>
 										))}
 										<th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-											Points
+											Total Points
 										</th>
 									</tr>
 									{/* Favored Row */}
@@ -233,7 +233,14 @@ export default function GroupPicksPage() {
 									</tr>
 								</thead>
 								<tbody className="bg-white divide-y divide-gray-200">
-									{data.user_picks.map((userPicks) => {
+									{[...data.user_picks].sort((a, b) => {
+										// Sort by weekly_points descending (highest first)
+										// If points are equal, sort alphabetically by name
+										if (b.weekly_points !== a.weekly_points) {
+											return b.weekly_points - a.weekly_points
+										}
+										return a.display_name.localeCompare(b.display_name)
+									}).map((userPicks) => {
 										const isUser = isCurrentUser(userPicks.user_id)
 										return (
 											<tr
