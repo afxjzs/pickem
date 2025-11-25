@@ -61,7 +61,9 @@ export function ProfileStep({ onNext, initialData }: ProfileStepProps) {
 			setUsernameError(null)
 
 			try {
-				const response = await fetch(`/api/users/check-username?username=${encodeURIComponent(username)}`)
+				const response = await fetch(`/api/users/check-username?username=${encodeURIComponent(username)}`, {
+					credentials: 'include',
+				})
 				const result = await response.json()
 
 				if (!result.success) {

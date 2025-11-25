@@ -114,23 +114,34 @@ function PicksPageContent() {
 
 	useEffect(() => {
 		if (user) {
+			// Clear games and picks when week/season changes to prevent showing stale data
+			setGames([])
+			setUserPicks([])
 			// Fetch games first, then picks (picks need games to match against)
 			fetchGames()
 			fetchTeams()
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [user, season, week])
 
 	// Fetch picks after games are loaded
-	// Clear picks when week changes to avoid showing picks from other weeks
+	// Only fetch picks if games match the current week/season
 	useEffect(() => {
 		if (user && games.length > 0) {
-			// Clear picks from other weeks first
-			setUserPicks([])
-			// Then fetch picks for current week
-			fetchUserPicks()
+			// Verify games match current week/season before fetching picks
+			// Convert to same types for comparison (week is number, season is string)
+			const gamesMatchWeek = games.every(game => 
+				Number(game.week) === Number(week) && String(game.season) === String(season)
+			)
+			if (gamesMatchWeek) {
+				// Clear picks from other weeks first
+				setUserPicks([])
+				// Then fetch picks for current week
+				fetchUserPicks()
+			}
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [user, season, week, games.length])
+	}, [user, season, week, games])
 
 	const fetchGames = async () => {
 		try {
