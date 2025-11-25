@@ -27,13 +27,16 @@ export default function DashboardPage() {
 				try {
 					const response = await fetch("/api/users/me")
 					const data = await response.json()
+					console.log("[Dashboard] /api/users/me response:", { success: data.success, hasData: !!data.data, username: data.data?.username, error: data.error })
 					if (data.success && data.data) {
 						if (!data.data.username) {
+							console.log("[Dashboard] User missing username, redirecting to onboarding")
 							router.push("/onboarding")
 							return
 						}
 					} else {
 						// User doesn't exist in users table, redirect to onboarding
+						console.log("[Dashboard] User not found or API error:", data.error || "Unknown error")
 						router.push("/onboarding")
 						return
 					}

@@ -33,6 +33,9 @@ export async function GET(request: NextRequest) {
 				autoRefreshToken: false,
 				persistSession: false,
 			},
+			db: {
+				schema: 'pickem'
+			}
 		})
 		
 		// Get query parameters

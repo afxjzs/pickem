@@ -27,6 +27,9 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 		autoRefreshToken: false,
 		persistSession: false,
 	},
+	db: {
+		schema: 'pickem'
+	}
 })
 
 // Helper function to shuffle array (Fisher-Yates)

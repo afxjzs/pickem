@@ -321,6 +321,9 @@ export async function POST(request: NextRequest) {
             autoRefreshToken: false,
             persistSession: false,
           },
+          db: {
+            schema: 'pickem'
+          }
         })
         
         // Clear the sync timestamp to force a refresh on next group picks fetch
@@ -519,6 +522,9 @@ export async function PUT(request: NextRequest) {
             autoRefreshToken: false,
             persistSession: false,
           },
+          db: {
+            schema: 'pickem'
+          }
         })
         
         // Clear the sync timestamp to force a refresh on next group picks fetch

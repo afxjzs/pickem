@@ -46,6 +46,9 @@ export async function setLastSyncTime(
 			autoRefreshToken: false,
 			persistSession: false,
 		},
+		db: {
+			schema: "pickem",
+		},
 	})
 
 	const key = `last_games_sync_${season}_${week}`
@@ -87,6 +90,9 @@ export async function hasGamesChangedSince(
 			autoRefreshToken: false,
 			persistSession: false,
 		},
+		db: {
+			schema: "pickem",
+		},
 	})
 
 	const { data, error } = await supabase
@@ -127,6 +133,9 @@ export async function isActiveGameWindow(
 		auth: {
 			autoRefreshToken: false,
 			persistSession: false,
+		},
+		db: {
+			schema: "pickem",
 		},
 	})
 	const now = new Date()

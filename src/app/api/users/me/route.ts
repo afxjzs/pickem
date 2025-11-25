@@ -23,13 +23,30 @@ export async function GET(request: NextRequest) {
 			.maybeSingle()
 
 		if (dbError) {
-			console.error("Error fetching user:", dbError)
+			console.error("[API /users/me] Error fetching user:", {
+				error: dbError,
+				message: dbError.message,
+				code: dbError.code,
+				details: dbError.details,
+				userId: user.id,
+				userEmail: user.email
+			})
 			return createErrorResponse("Internal Server Error", dbError.message, 500)
 		}
 
 		if (!dbUser) {
+			console.log("[API /users/me] User not found in pickem.users table:", {
+				userId: user.id,
+				userEmail: user.email
+			})
 			return createErrorResponse("Not Found", "User profile not found", 404)
 		}
+
+		console.log("[API /users/me] User found:", {
+			userId: dbUser.id,
+			username: dbUser.username,
+			email: dbUser.email
+		})
 
 		return createSuccessResponse(dbUser)
 	} catch (error) {

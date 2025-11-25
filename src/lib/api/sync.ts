@@ -293,6 +293,9 @@ class DataSyncService {
 				autoRefreshToken: false,
 				persistSession: false,
 			},
+		db: {
+			schema: 'pickem'
+		}
 		})
 
 		for (const team of teams) {
@@ -325,6 +328,9 @@ class DataSyncService {
 				autoRefreshToken: false,
 				persistSession: false,
 			},
+		db: {
+			schema: 'pickem'
+		}
 		})
 
 		for (const game of games) {
@@ -382,6 +388,9 @@ class DataSyncService {
 				autoRefreshToken: false,
 				persistSession: false,
 			},
+		db: {
+			schema: 'pickem'
+		}
 		})
 
 		for (const standing of standings) {

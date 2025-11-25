@@ -262,6 +262,9 @@ export async function GET(request: NextRequest) {
 				autoRefreshToken: false,
 				persistSession: false,
 			},
+			db: {
+				schema: 'pickem'
+			}
 		})
 		
 		// Get query parameters
@@ -357,6 +360,9 @@ export async function GET(request: NextRequest) {
 							autoRefreshToken: false,
 							persistSession: false,
 						},
+						db: {
+							schema: 'pickem'
+						}
 					})
 					
 					// Fetch existing games to get IDs
