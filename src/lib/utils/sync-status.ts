@@ -1,6 +1,6 @@
 // Sync status utilities for intelligent game data caching
 
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@supabase/supabase-js"
 import { getAppConfig } from "./database"
 
 /**
@@ -28,8 +28,26 @@ export async function getLastSyncTime(
 /**
  * Set the last sync timestamp for a specific season and week
  */
-export async function setLastSyncTime(season: string, week: number): Promise<void> {
-	const supabase = await createClient()
+export async function setLastSyncTime(
+	season: string,
+	week: number
+): Promise<void> {
+	// Use service role client to bypass RLS for sync operations
+	const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+	const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+	if (!supabaseUrl || !supabaseServiceKey) {
+		console.error("Missing Supabase configuration for service role")
+		return
+	}
+
+	const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+		auth: {
+			autoRefreshToken: false,
+			persistSession: false,
+		},
+	})
+
 	const key = `last_games_sync_${season}_${week}`
 	const timestamp = new Date().toISOString()
 
@@ -55,7 +73,21 @@ export async function hasGamesChangedSince(
 	week: number,
 	lastSyncTime: Date
 ): Promise<boolean> {
-	const supabase = await createClient()
+	// Use service role client for read operations in sync context
+	const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+	const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+	if (!supabaseUrl || !supabaseServiceKey) {
+		console.error("Missing Supabase configuration for service role")
+		return true // On error, assume games have changed to be safe
+	}
+
+	const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+		auth: {
+			autoRefreshToken: false,
+			persistSession: false,
+		},
+	})
 
 	const { data, error } = await supabase
 		.from("games")
@@ -82,7 +114,21 @@ export async function isActiveGameWindow(
 	season: string,
 	week: number
 ): Promise<boolean> {
-	const supabase = await createClient()
+	// Use service role client for read operations in sync context
+	const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+	const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+	if (!supabaseUrl || !supabaseServiceKey) {
+		console.error("Missing Supabase configuration for service role")
+		return false
+	}
+
+	const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+		auth: {
+			autoRefreshToken: false,
+			persistSession: false,
+		},
+	})
 	const now = new Date()
 	const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000)
 	const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000)
@@ -107,7 +153,7 @@ export async function isActiveGameWindow(
 
 /**
  * Determine if games should be synced based on caching logic
- * 
+ *
  * Sync decision tree:
  * 1. No sync timestamp exists → Sync (first time)
  * 2. Games have changed (status or scores updated) → Sync
@@ -146,4 +192,3 @@ export async function shouldSyncGames(
 	const DEFAULT_SYNC_INTERVAL = 15 * 60 * 1000 // 15 minutes
 	return timeSinceSync > DEFAULT_SYNC_INTERVAL
 }
-

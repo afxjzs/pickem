@@ -7,7 +7,7 @@ import {
 	normalizeGames,
 	normalizeAllStandings,
 } from "./normalizers"
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@supabase/supabase-js"
 import { shouldSyncGames, setLastSyncTime } from "@/lib/utils/sync-status"
 import type {
 	NormalizedTeam,
@@ -280,7 +280,20 @@ class DataSyncService {
 	 * Sync teams data to database
 	 */
 	private async syncTeamsToDatabase(teams: NormalizedTeam[]): Promise<void> {
-		const supabase = await createClient()
+		// Use service role client to bypass RLS for sync operations
+		const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+		const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+		
+		if (!supabaseUrl || !supabaseServiceKey) {
+			throw new Error("Missing Supabase configuration for service role")
+		}
+
+		const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+			auth: {
+				autoRefreshToken: false,
+				persistSession: false,
+			},
+		})
 
 		for (const team of teams) {
 			const { error } = await supabase
@@ -299,7 +312,20 @@ class DataSyncService {
 	 * Sync games data to database
 	 */
 	async syncGamesToDatabase(games: NormalizedGame[]): Promise<void> {
-		const supabase = await createClient()
+		// Use service role client to bypass RLS for sync operations
+		const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+		const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+		
+		if (!supabaseUrl || !supabaseServiceKey) {
+			throw new Error("Missing Supabase configuration for service role")
+		}
+
+		const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+			auth: {
+				autoRefreshToken: false,
+				persistSession: false,
+			},
+		})
 
 		for (const game of games) {
 			// First, check if game exists by espn_id
@@ -343,7 +369,20 @@ class DataSyncService {
 	private async syncStandingsToDatabase(
 		standings: NormalizedStanding[]
 	): Promise<void> {
-		const supabase = await createClient()
+		// Use service role client to bypass RLS for sync operations
+		const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+		const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+		
+		if (!supabaseUrl || !supabaseServiceKey) {
+			throw new Error("Missing Supabase configuration for service role")
+		}
+
+		const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+			auth: {
+				autoRefreshToken: false,
+				persistSession: false,
+			},
+		})
 
 		for (const standing of standings) {
 			const { error } = await supabase
@@ -388,7 +427,20 @@ class DataSyncService {
 		gameIds?: string[]
 	): Promise<void> {
 		try {
-			const supabase = await createClient()
+			// Use service role client to bypass RLS for sync operations
+			const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+			const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+			
+			if (!supabaseUrl || !supabaseServiceKey) {
+				throw new Error("Missing Supabase configuration for service role")
+			}
+
+			const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+				auth: {
+					autoRefreshToken: false,
+					persistSession: false,
+				},
+			})
 			
 			// Fetch games from database for this week
 			let query = supabase

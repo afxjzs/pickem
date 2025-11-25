@@ -16,6 +16,8 @@ interface UserPick {
 	confidencePoints: number
 	saving?: boolean
 	saved?: boolean
+	justCleared?: boolean // Flag to indicate this pick was just cleared (confidence points moved to another game)
+	clearedPoint?: number // The confidence point value that was cleared (to show in red)
 }
 
 function PicksPageContent() {
@@ -191,6 +193,8 @@ function PicksPageContent() {
 					confidencePoints: pick.confidence_points,
 					saving: false,
 					saved: true, // Picks from database are saved
+					justCleared: false, // Reset cleared flag when loading from database
+					clearedPoint: undefined, // Reset cleared point when loading from database
 				}))
 				
 				// Get current week's game IDs to filter picks
@@ -414,6 +418,8 @@ function PicksPageContent() {
 				...pointUsedBy,
 				confidencePoints: 0,
 				saved: false,
+				justCleared: true, // Mark as just cleared to show red highlight
+				clearedPoint: pointUsedBy.confidencePoints, // Store the cleared point value to highlight it
 			}
 			
 			// Update state immediately for UI responsiveness
@@ -443,6 +449,8 @@ function PicksPageContent() {
 							...pick,
 							confidencePoints,
 							saved: false,
+							justCleared: false, // Remove red highlight when new confidence point is selected
+							clearedPoint: undefined, // Clear the cleared point value
 						}
 					}
 					return pick
@@ -1093,6 +1101,9 @@ function PicksPageContent() {
 													}
 												}
 												
+												// Check if this game was just cleared and this is the point that was cleared
+												const wasJustCleared = userPick?.justCleared && userPick?.clearedPoint === point
+												
 												// Disable button ONLY if:
 												// 1. This game is locked (all buttons disabled)
 												// 2. This point is assigned to a LOCKED game (only this button disabled)
@@ -1108,6 +1119,8 @@ function PicksPageContent() {
 														className={`px-4 py-2 rounded-md font-medium transition-all ${
 															isCurrent
 																? "bg-blue-600 text-white shadow-md border-2 border-blue-600"
+																: wasJustCleared
+																? "bg-red-500 text-white border-2 border-red-600"
 																: isUsed && usedByLockedGame
 																? "bg-gray-200 text-gray-500 border-2 border-gray-200 opacity-50 cursor-not-allowed"
 																: isUsed && !usedByLockedGame
@@ -1115,7 +1128,9 @@ function PicksPageContent() {
 																: "bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50"
 														} ${isDisabled ? "opacity-75 cursor-not-allowed" : ""}`}
 														title={
-															usedByLockedGame 
+															wasJustCleared
+																? `This confidence point was just moved to another game`
+																: usedByLockedGame 
 																? `This point is assigned to a locked game and cannot be changed`
 																: usedByGame 
 																? `Currently used by another game (click to reassign)` 

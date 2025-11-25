@@ -6,10 +6,103 @@ import { createClient } from "@supabase/supabase-js"
 import { createSuccessResponse, handleAPIError } from "@/lib/api/utils"
 import { espnAPI } from "@/lib/api/espn"
 import type { Game, Pick, Team } from "@/lib/types/database"
+import { calculateWeeklyScore } from "@/lib/utils/scoring"
+import { createHash } from "crypto"
+
+/**
+ * Batch recalculate scores for all users for a specific week
+ * Much faster than sequential recalculation
+ */
+async function batchRecalculateScores(
+	supabase: ReturnType<typeof createClient>,
+	week: number,
+	season: string,
+	games: Game[]
+): Promise<void> {
+	// Fetch all picks for this week in one query
+	const gameIds = games.map(g => g.id)
+	if (gameIds.length === 0) {
+		return
+	}
+
+	const { data: allPicks, error: picksError } = await supabase
+		.from("picks")
+		.select("*")
+		.in("game_id", gameIds)
+
+	if (picksError) {
+		console.error("Error fetching picks for batch recalculation:", picksError)
+		return
+	}
+
+	if (!allPicks || allPicks.length === 0) {
+		return
+	}
+
+	// Fetch all users
+	const { data: allUsers, error: usersError } = await supabase
+		.from("users")
+		.select("id")
+
+	if (usersError || !allUsers) {
+		console.error("Error fetching users for batch recalculation:", usersError)
+		return
+	}
+
+	// Group picks by user_id
+	const picksByUser = new Map<string, Pick[]>()
+	allPicks.forEach((pick: Pick) => {
+		const userId = pick.user_id
+		if (!picksByUser.has(userId)) {
+			picksByUser.set(userId, [])
+		}
+		picksByUser.get(userId)!.push(pick)
+	})
+
+	// Calculate scores for all users in parallel (in-memory)
+	const scoresToUpsert: Array<{
+		user_id: string
+		week: number
+		season: string
+		points: number
+		correct_picks: number
+		total_picks: number
+	}> = []
+
+	for (const user of allUsers) {
+		const userPicks = picksByUser.get(user.id) || []
+		const scoreData = calculateWeeklyScore(userPicks, games)
+		
+		scoresToUpsert.push({
+			user_id: user.id,
+			week,
+			season,
+			points: scoreData.points,
+			correct_picks: scoreData.correct_picks,
+			total_picks: scoreData.total_picks,
+		})
+	}
+
+	// Batch upsert all scores in one operation
+	if (scoresToUpsert.length > 0) {
+		const { error: upsertError } = await supabase
+			.from("scores")
+			.upsert(scoresToUpsert, {
+				onConflict: "user_id,week,season",
+			})
+
+		if (upsertError) {
+			console.error("Error batch upserting scores:", upsertError)
+		} else {
+			console.log(`✓ Batch recalculated scores for ${scoresToUpsert.length} users`)
+		}
+	}
+}
 
 /**
  * Sync game odds (spread and over/under) for a specific week
  * Uses service role client to bypass RLS
+ * Optimized with parallel requests
  */
 async function syncGameOddsForWeek(
 	supabase: ReturnType<typeof createClient>,
@@ -33,59 +126,89 @@ async function syncGameOddsForWeek(
 		return
 	}
 
-	// Sync odds for all games (to ensure we have latest data)
-	// But prioritize games without spread data
+	// Only sync games without spread data (skip if all have spread)
 	const gamesWithoutSpread = games.filter(g => !g.spread && g.espn_id)
-	const gamesWithSpread = games.filter(g => g.spread && g.espn_id)
 	
-	// Sync games without spread first, then games with spread (to refresh)
-	const gamesToSync = [...gamesWithoutSpread, ...gamesWithSpread]
-
-	if (gamesToSync.length === 0) {
-		return
+	if (gamesWithoutSpread.length === 0) {
+		return // All games already have spread data
 	}
 
-	console.log(`Syncing odds for ${gamesToSync.length} games (${gamesWithoutSpread.length} missing spread)...`)
+	console.log(`Syncing odds for ${gamesWithoutSpread.length} games...`)
 
-	// Sync odds for each game
-	for (const game of gamesToSync) {
-		if (!game.espn_id) {
-			continue
-		}
+	// Sync odds in parallel with rate limiting (batch of 5 at a time)
+	const batchSize = 5
+	const updates: Array<{ gameId: string; spread?: number | null; over_under?: number | null }> = []
 
-		try {
-			// Fetch odds from ESPN
-			const odds = await espnAPI.getGameOdds(game.espn_id)
-
-			if (odds) {
-				const updateData: { spread?: number | null; over_under?: number | null } = {}
-				
-				if (odds.spread !== null) {
-					updateData.spread = odds.spread
-				}
-				
-				if (odds.overUnder !== null) {
-					updateData.over_under = odds.overUnder
-				}
-
-				// Update game with odds data if we have any
-				if (Object.keys(updateData).length > 0) {
-					const { error: updateError } = await supabase
-						.from("games")
-						.update(updateData)
-						.eq("id", game.id)
-
-					if (updateError) {
-						console.error(`Error updating odds for game ${game.espn_id}:`, updateError)
-					}
-				}
+	for (let i = 0; i < gamesWithoutSpread.length; i += batchSize) {
+		const batch = gamesWithoutSpread.slice(i, i + batchSize)
+		
+		// Fetch odds for batch in parallel
+		const oddsPromises = batch.map(async (game) => {
+			if (!game.espn_id) {
+				return null
 			}
 
-			// Small delay to avoid rate limiting
-			await new Promise((resolve) => setTimeout(resolve, 200))
-		} catch (error) {
-			console.error(`Error syncing odds for game ${game.espn_id}:`, error)
+			try {
+				const odds = await espnAPI.getGameOdds(game.espn_id)
+				if (odds) {
+					return {
+						gameId: game.id,
+						spread: odds.spread,
+						overUnder: odds.overUnder,
+					}
+				}
+			} catch (error) {
+				console.error(`Error syncing odds for game ${game.espn_id}:`, error)
+			}
+			return null
+		})
+
+		const results = await Promise.all(oddsPromises)
+		
+		// Collect updates
+		results.forEach((result) => {
+			if (result) {
+				updates.push({
+					gameId: result.gameId,
+					spread: result.spread,
+					over_under: result.overUnder,
+				})
+			}
+		})
+
+		// Small delay between batches to avoid rate limiting
+		if (i + batchSize < gamesWithoutSpread.length) {
+			await new Promise((resolve) => setTimeout(resolve, 100))
 		}
+	}
+
+	// Batch update all games in parallel
+	if (updates.length > 0) {
+		const updatePromises = updates.map(async (update) => {
+			const updateData: { spread?: number | null; over_under?: number | null } = {}
+			
+			if (update.spread !== null && update.spread !== undefined) {
+				updateData.spread = update.spread
+			}
+			
+			if (update.over_under !== null && update.over_under !== undefined) {
+				updateData.over_under = update.over_under
+			}
+
+			if (Object.keys(updateData).length > 0) {
+				const { error } = await supabase
+					.from("games")
+					.update(updateData)
+					.eq("id", update.gameId)
+
+				if (error) {
+					console.error(`Error updating odds for game ${update.gameId}:`, error)
+				}
+			}
+		})
+
+		await Promise.all(updatePromises)
+		console.log(`✓ Updated odds for ${updates.length} games`)
 	}
 }
 
@@ -109,6 +232,14 @@ export interface GroupPicksResponse {
 	user_picks: UserPickData[]
 	week: number
 	season: string
+}
+
+/**
+ * Generate ETag from response data
+ */
+function generateETag(data: GroupPicksResponse): string {
+	const dataString = JSON.stringify(data)
+	return createHash('md5').update(dataString).digest('hex')
 }
 
 export async function GET(request: NextRequest) {
@@ -147,28 +278,75 @@ export async function GET(request: NextRequest) {
 			return handleAPIError(new Error("Invalid week parameter"), "fetch group picks", 400)
 		}
 
-		// For current week, always sync games to get latest status (scheduled -> live -> final)
-		// This ensures live games are properly marked as "live"
+		// Check if this is the current week
 		const { espnAPI } = await import("@/lib/api/espn")
 		const seasonInfo = await espnAPI.getCurrentSeasonInfo()
 		const isCurrentWeek = seasonInfo.currentWeek === weekNumber && seasonInfo.season === parseInt(season)
 		
-		if (isCurrentWeek) {
-			// Force sync games for current week to get latest status
-			// Bypass cache check since game statuses change in real-time
+		// Get database state to check completeness
+		const { data: dbGames } = await supabase
+			.from("games")
+			.select("id, espn_id, status, start_time, home_score, away_score")
+			.eq("season", season)
+			.eq("week", weekNumber)
+		
+		// Check if week is complete (all games final with scores)
+		const isWeekComplete = dbGames && dbGames.length > 0 && dbGames.every(game => 
+			game.status === "final" && 
+			game.home_score !== null && 
+			game.away_score !== null
+		)
+		
+		// Check for missing data
+		const hasMissingData = dbGames && dbGames.length > 0 && dbGames.some(game => {
+			// Game is missing scores
+			if (game.home_score === null || game.away_score === null) {
+				return true
+			}
+			// Game should be final but isn't
+			if (game.status !== "final") {
+				const now = new Date()
+				const gameStartTime = new Date(game.start_time)
+				const hoursSinceStart = (now.getTime() - gameStartTime.getTime()) / (1000 * 60 * 60)
+				if (hoursSinceStart > 4) {
+					return true
+				}
+			}
+			return false
+		})
+		
+		// SIMPLE RULE: 
+		// - Always sync current week (until noon Tuesday ET when it becomes next week)
+		// - Only sync past weeks if they're incomplete (missing data)
+		// - Don't sync past weeks that are complete
+		const shouldSync = isCurrentWeek || (hasMissingData && !isWeekComplete)
+		
+		// Log the decision
+		console.log(`[GROUP-PICKS] Week ${weekNumber} sync decision:`, {
+			isCurrentWeek,
+			isWeekComplete,
+			hasMissingData,
+			shouldSync,
+			dbGamesCount: dbGames?.length || 0,
+			currentWeekFromAPI: seasonInfo.currentWeek
+		})
+		
+		if (shouldSync) {
 			try {
 				const { espnAPI: espn } = await import("@/lib/api/espn")
 				const { normalizeGames } = await import("@/lib/api/normalizers")
-				const { dataSync } = await import("@/lib/api/sync")
-				const { recalculateUserWeekScore } = await import("@/lib/utils/scoring")
 				
 				// Force fetch from ESPN (bypass cache)
-				console.log(`🔄 Force syncing games for current week ${weekNumber} to get latest status`)
-				const espnGames = await espn.getSchedule(parseInt(season), weekNumber)
-				const games = normalizeGames(espnGames)
+				const syncReasons = []
+				if (isCurrentWeek) syncReasons.push('current week')
+				if (hasMissingData) syncReasons.push('missing data detected')
+				if (!isWeekComplete) syncReasons.push('week incomplete')
 				
-				// Sync to database to update game statuses (scheduled -> live -> final)
-				// Use service role client to ensure updates work
+				console.log(`🔄 SYNCING week ${weekNumber} - REASONS: ${syncReasons.join(', ')}`)
+				const espnGames = await espn.getSchedule(parseInt(season), weekNumber)
+				const normalizedGames = normalizeGames(espnGames)
+				
+				// Batch update all games in one operation
 				const { createClient: createSupabaseClient } = await import("@supabase/supabase-js")
 				const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 				const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -181,131 +359,190 @@ export async function GET(request: NextRequest) {
 						},
 					})
 					
-					// Track if any games have final status (to trigger score recalculation)
-					let hasFinalGames = false
-					
-					// Update each game's status directly
-					for (const game of games) {
-						const { data: existing } = await serviceSupabase
-							.from("games")
-							.select("id, status")
-							.eq("espn_id", game.espn_id)
-							.single()
-						
-						if (existing) {
-							// Check if game is final (for score recalculation)
-							if (game.status === "final" && 
-								game.home_score !== null && 
-								game.away_score !== null) {
-								hasFinalGames = true
+					// Fetch existing games to get IDs
+					const { data: existingGames } = await serviceSupabase
+						.from("games")
+						.select("id, espn_id, status")
+						.eq("season", season)
+						.eq("week", weekNumber)
+
+					if (existingGames) {
+						const gameMap = new Map<string, string>() // espn_id -> id
+						existingGames.forEach((g: any) => {
+							if (g.espn_id) {
+								gameMap.set(g.espn_id, g.id)
 							}
-							
-							// Update status, scores, and start_time
-							await serviceSupabase
+						})
+
+						// Prepare batch updates - MUST include ALL required fields
+						const updates = normalizedGames
+							.filter(game => gameMap.has(game.espn_id))
+							.map(game => ({
+								id: gameMap.get(game.espn_id)!,
+								season: season, // CRITICAL: Must include season
+								week: weekNumber, // CRITICAL: Must include week
+								home_team: game.home_team, // CRITICAL: Must include home_team
+								away_team: game.away_team, // CRITICAL: Must include away_team
+								status: game.status,
+								home_score: game.home_score,
+								away_score: game.away_score,
+								start_time: game.start_time,
+							}))
+
+						// Check if any games are final (for score recalculation)
+						const hasFinalGames = normalizedGames.some(
+							g => g.status === "final" && 
+							g.home_score !== null && 
+							g.away_score !== null
+						)
+
+						// Batch update all games
+						if (updates.length > 0) {
+							// Use upsert with conflict resolution for batch update
+							const { error: updateError } = await serviceSupabase
 								.from("games")
-								.update({
-									status: game.status,
-									home_score: game.home_score,
-									away_score: game.away_score,
-									start_time: game.start_time,
+								.upsert(updates, {
+									onConflict: "id",
 								})
-								.eq("id", existing.id)
-						}
-					}
-					
-					// If any games are final, recalculate scores for all users
-					// This ensures scores are always up-to-date when viewing current week
-					if (hasFinalGames) {
-						console.log(`📊 Recalculating scores for all users (week ${weekNumber})`)
-						
-						// Fetch all users
-						const { data: allUsers, error: usersError } = await serviceSupabase
-							.from("users")
-							.select("id")
-						
-						if (!usersError && allUsers) {
-							// Recalculate scores for each user
-							for (const user of allUsers) {
-								try {
-									await recalculateUserWeekScore(
-										serviceSupabase,
-										user.id,
-										weekNumber,
-										season
-									)
-								} catch (error) {
-									console.error(`Error recalculating score for user ${user.id}:`, error)
-									// Continue with other users even if one fails
+
+							if (updateError) {
+								console.error(`❌ Error batch updating games:`, updateError)
+							} else {
+								console.log(`✅ Batch updated ${updates.length} games with latest ESPN data`)
+								
+								// Verify completeness after sync if week should be complete
+								if (!isCurrentWeek && isWeekComplete) {
+									const { data: verifyGames } = await serviceSupabase
+										.from("games")
+										.select("id, status, home_score, away_score")
+										.eq("season", season)
+										.eq("week", weekNumber)
+									
+									if (verifyGames) {
+										const incomplete = verifyGames.filter(game => 
+											game.status !== "final" || 
+											game.home_score === null || 
+											game.away_score === null
+										)
+										
+										if (incomplete.length === 0) {
+											console.log(`✅ Week ${weekNumber} is now COMPLETE - all games final with scores`)
+										} else {
+											console.error(`❌ Week ${weekNumber} still has ${incomplete.length} incomplete games after sync!`)
+											console.error(`Incomplete games:`, incomplete.map(g => ({ id: g.id, status: g.status, scores: `${g.home_score}-${g.away_score}` })))
+										}
+									}
 								}
 							}
-							console.log(`✓ Recalculated scores for ${allUsers.length} users`)
 						}
+
+						// If any games are final with scores, batch recalculate scores for all users
+						if (hasFinalGames) {
+							const { data: updatedGames } = await serviceSupabase
+								.from("games")
+								.select("*")
+								.eq("season", season)
+								.eq("week", weekNumber)
+
+							if (updatedGames) {
+								console.log(`🔄 Recalculating scores for week ${weekNumber}`)
+								await batchRecalculateScores(
+									serviceSupabase,
+									weekNumber,
+									season,
+									updatedGames as Game[]
+								)
+								console.log(`✅ Score recalculation complete for week ${weekNumber}`)
+							}
+						}
+						
+						// Set last sync time after successful sync (use service role client)
+						const timestamp = new Date().toISOString()
+						const key = `last_games_sync_${season}_${weekNumber}`
+						const { error: timestampError } = await serviceSupabase.from("app_config").upsert(
+							{
+								key,
+								value: timestamp,
+								description: `Last sync time for season ${season}, week ${weekNumber}`,
+							},
+							{ onConflict: "key" }
+						)
+						
+						if (timestampError) {
+							console.error(`Error setting sync timestamp:`, timestampError)
+						} else {
+							console.log(`✅ Sync timestamp updated for week ${weekNumber}`)
+						}
+					} else {
+						console.warn(`⚠️  No existing games found in database for week ${weekNumber}`)
 					}
-				} else {
-					// Fallback to dataSync method
-					await dataSync.syncGamesToDatabase(games)
 				}
 			} catch (error) {
-				console.error("Error syncing games for current week (non-fatal):", error)
-				// Continue even if sync fails
+				console.error(`❌ Error syncing games for week ${weekNumber}:`, error)
+				// Continue even if sync fails - but log it clearly
+			}
+		} else {
+			// Only skip if we're CERTAIN everything is complete
+			const allComplete = dbGames && dbGames.length > 0 && dbGames.every(game => 
+				game.status === "final" && 
+				game.home_score !== null && 
+				game.away_score !== null
+			)
+			
+			if (allComplete) {
+				console.log(`⏭️  Skipping sync for week ${weekNumber} - all games are final with scores`)
+			} else {
+				// This shouldn't happen, but if it does, log it
+				console.warn(`⚠️  Skipping sync but data may be incomplete for week ${weekNumber}`)
 			}
 		}
 
-		// Fetch all games for this week first to check if week is complete
-		let { data: games, error: gamesError } = await supabase
-			.from("games")
-			.select("*")
-			.eq("season", season)
-			.eq("week", weekNumber)
-			.order("start_time", { ascending: true })
+		// Fetch all data in parallel for better performance
+		const [gamesResult, teamsResult, usersResult] = await Promise.all([
+			supabase
+				.from("games")
+				.select("*")
+				.eq("season", season)
+				.eq("week", weekNumber)
+				.order("start_time", { ascending: true })
+				.order("home_team", { ascending: true }),
+			supabase
+				.from("teams")
+				.select("*")
+				.eq("active", true),
+			supabase
+				.from("users")
+				.select("id, display_name")
+				.order("display_name", { ascending: true }),
+		])
+
+		const { data: games, error: gamesError } = gamesResult
+		const { data: teams, error: teamsError } = teamsResult
+		const { data: allUsers, error: usersError } = usersResult
 
 		if (gamesError) {
 			return handleAPIError(gamesError, "fetch games")
+		}
+
+		if (usersError) {
+			console.error("Error fetching users:", usersError)
+			return handleAPIError(usersError, "fetch users")
 		}
 
 		// Check if week is complete (all games are final)
 		const allGamesFinal = games && games.length > 0 && games.every(game => game.status === "final")
 		
-		// Check if any games are missing spread data
-		const gamesMissingSpread = games && games.some(game => !game.spread && game.espn_id)
-		
-		// Sync odds if:
-		// 1. Week is not complete (games might still be live or upcoming) - always sync
-		// 2. Week is complete but games are missing spread data - sync to populate missing data
-		if (!allGamesFinal || gamesMissingSpread) {
-			// Sync odds to ensure we have spread data
-			try {
-				await syncGameOddsForWeek(supabase, parseInt(season), weekNumber)
-				
-				// Re-fetch games after syncing odds to get updated spread data
-				const { data: updatedGames, error: updatedGamesError } = await supabase
-					.from("games")
-					.select("*")
-					.eq("season", season)
-					.eq("week", weekNumber)
-					.order("start_time", { ascending: true })
-				
-				if (!updatedGamesError && updatedGames) {
-					games = updatedGames
-				}
-			} catch (error) {
-				console.error("Error syncing odds (non-fatal):", error)
-				// Continue even if odds sync fails
+		// For current week, sync odds if games are missing spread data
+		// For past weeks, skip odds syncing (too slow, data should already be there)
+		if (isCurrentWeek && games) {
+			const gamesMissingSpread = games.some(game => !game.spread && game.espn_id)
+			
+			if (gamesMissingSpread) {
+				// Sync odds in background (don't wait for it)
+				syncGameOddsForWeek(supabase, parseInt(season), weekNumber).catch(error => {
+					console.error("Error syncing odds (non-fatal):", error)
+				})
 			}
-		}
-
-		if (gamesError) {
-			return handleAPIError(gamesError, "fetch games")
-		}
-
-		// Fetch all teams for enrichment
-		const { data: teams, error: teamsError } = await supabase
-			.from("teams")
-			.select("*")
-			.eq("active", true)
-
-		if (teamsError) {
-			console.error("Error fetching teams:", teamsError)
 		}
 
 		// Create team map
@@ -321,47 +558,41 @@ export async function GET(request: NextRequest) {
 			away_team_data: teamMap.get(game.away_team) || null,
 		}))
 
-		// Fetch ALL users first (to include users without picks)
-		const { data: allUsers, error: usersError } = await supabase
-			.from("users")
-			.select("id, display_name")
-			.order("display_name", { ascending: true })
-
-		if (usersError) {
-			console.error("Error fetching users:", usersError)
-			return handleAPIError(usersError, "fetch users")
-		}
-
-		// Fetch all picks for this week
+		// Fetch picks and scores in parallel
 		const gameIds = enrichedGames.map(g => g.id)
-		const { data: picks, error: picksError } = await supabase
-			.from("picks")
-			.select(`
-				*,
-				users!inner(
-					id,
-					display_name
-				)
-			`)
-			.in("game_id", gameIds.length > 0 ? gameIds : [])
+		const [picksResult, scoresResult] = await Promise.all([
+			gameIds.length > 0
+				? supabase
+					.from("picks")
+					.select(`
+						*,
+						users!inner(
+							id,
+							display_name
+						)
+					`)
+					.in("game_id", gameIds)
+				: Promise.resolve({ data: [], error: null }),
+			supabase
+				.from("scores")
+				.select(`
+					*,
+					users!inner(
+						id,
+						display_name
+					)
+				`)
+				.eq("season", season)
+				.eq("week", weekNumber)
+				.order("points", { ascending: false }),
+		])
+
+		const { data: picks, error: picksError } = picksResult
+		const { data: weeklyScores, error: scoresError } = scoresResult
 
 		if (picksError) {
 			return handleAPIError(picksError, "fetch picks")
 		}
-
-		// Fetch weekly scores for ranking
-		const { data: weeklyScores, error: scoresError } = await supabase
-			.from("scores")
-			.select(`
-				*,
-				users!inner(
-					id,
-					display_name
-				)
-			`)
-			.eq("season", season)
-			.eq("week", weekNumber)
-			.order("points", { ascending: false })
 
 		if (scoresError) {
 			console.error("Error fetching weekly scores:", scoresError)
@@ -436,11 +667,28 @@ export async function GET(request: NextRequest) {
 				return b.weekly_points - a.weekly_points
 			})
 
-		const responseData = {
+		const responseData: GroupPicksResponse = {
 			games: enrichedGames,
 			user_picks: userPicksArray,
 			week: weekNumber,
 			season,
+		}
+
+		// Generate ETag for cache validation
+		const etag = generateETag(responseData)
+		const requestETag = request.headers.get("if-none-match")
+
+		// If ETag matches, return 304 Not Modified
+		if (requestETag === `"${etag}"`) {
+			return new Response(null, {
+				status: 304,
+				headers: {
+					'ETag': `"${etag}"`,
+					'Cache-Control': allGamesFinal 
+						? 'public, max-age=31536000, immutable' 
+						: 'public, max-age=300',
+				},
+			})
 		}
 
 		// Add caching headers for completed weeks
@@ -455,12 +703,12 @@ export async function GET(request: NextRequest) {
 			type: "group_picks"
 		}, {
 			headers: {
-				'Cache-Control': cacheControl
-			}
+				'Cache-Control': cacheControl,
+				'ETag': `"${etag}"`,
+			},
 		})
 
 	} catch (error) {
 		return handleAPIError(error, "fetch group picks")
 	}
 }
-

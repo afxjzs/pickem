@@ -10,6 +10,7 @@ export async function getGamesByWeek(season: string, week: number): Promise<Game
 		.eq('season', season)
 		.eq('week', week)
 		.order('start_time', { ascending: true })
+		.order('home_team', { ascending: true })
 	
 	if (error) {
 		console.error('Error fetching games:', error)

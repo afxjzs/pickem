@@ -78,8 +78,13 @@ export async function GET(request: NextRequest) {
 			)
 		}
 
-		// Sort by start time (earliest first)
-		enrichedGames.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+		// Sort by start time (earliest first), then by home team (alphabetical)
+		enrichedGames.sort((a, b) => {
+			const timeDiff = new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+			if (timeDiff !== 0) return timeDiff
+			// If start times are equal, sort by home team alphabetically
+			return a.home_team.localeCompare(b.home_team)
+		})
 
 		return createSuccessResponse(enrichedGames, {
 			count: enrichedGames.length,

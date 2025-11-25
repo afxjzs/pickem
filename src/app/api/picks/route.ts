@@ -132,15 +132,46 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const body = await request.json().catch(() => ({}))
-    const gameId = body?.gameId as string | undefined
-    const pickedTeam = body?.pickedTeam as string | undefined
-    const confidencePoints = body?.confidencePoints as number | undefined
-
-    if (!gameId || !pickedTeam || typeof confidencePoints !== "number") {
+    let body
+    try {
+      body = await request.json()
+    } catch (error) {
+      console.error("[POST /api/picks] Failed to parse JSON body:", error)
       return createErrorResponse(
         "Bad Request",
-        "Missing required fields: gameId, pickedTeam, confidencePoints",
+        "Invalid JSON in request body",
+        400
+      )
+    }
+    
+    const gameId = body?.gameId as string | undefined
+    const pickedTeam = body?.pickedTeam as string | undefined
+    let confidencePoints = body?.confidencePoints
+
+    // Handle confidencePoints - it might come as a string "0" or number 0
+    if (typeof confidencePoints === "string") {
+      confidencePoints = parseInt(confidencePoints, 10)
+      if (isNaN(confidencePoints)) {
+        confidencePoints = undefined
+      }
+    }
+
+    // Log the received body for debugging
+    console.log("[POST /api/picks] Received body:", { gameId, pickedTeam, confidencePoints, confidencePointsType: typeof confidencePoints, bodyKeys: Object.keys(body || {}) })
+
+    if (!gameId || !pickedTeam || typeof confidencePoints !== "number") {
+      console.error("[POST /api/picks] Validation failed:", {
+        hasGameId: !!gameId,
+        gameIdValue: gameId,
+        hasPickedTeam: !!pickedTeam,
+        pickedTeamValue: pickedTeam,
+        confidencePointsType: typeof confidencePoints,
+        confidencePointsValue: confidencePoints,
+        rawBody: JSON.stringify(body)
+      })
+      return createErrorResponse(
+        "Bad Request",
+        `Missing required fields: gameId=${!!gameId}, pickedTeam=${!!pickedTeam}, confidencePoints=${typeof confidencePoints === "number"}`,
         400
       )
     }
@@ -275,6 +306,33 @@ export async function POST(request: NextRequest) {
 
     if (insertError || !newPick) {
       return handleAPIError(insertError, "create pick")
+    }
+
+    // Invalidate group picks cache for this week by clearing the sync timestamp
+    // This ensures the group picks view refreshes to show the new pick
+    try {
+      const { createClient: createSupabaseClient } = await import("@supabase/supabase-js")
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+      
+      if (supabaseUrl && supabaseServiceKey) {
+        const serviceSupabase = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+          },
+        })
+        
+        // Clear the sync timestamp to force a refresh on next group picks fetch
+        const key = `last_games_sync_${game.season}_${game.week}`
+        await serviceSupabase
+          .from("app_config")
+          .delete()
+          .eq("key", key)
+      }
+    } catch (error) {
+      // Non-critical - log but don't fail the pick creation
+      console.error("Error invalidating group picks cache:", error)
     }
 
     return createSuccessResponse(newPick, { message: "Pick created successfully" })
@@ -446,6 +504,33 @@ export async function PUT(request: NextRequest) {
 
     if (updateError || !updatedPick) {
       return handleAPIError(updateError, "update pick")
+    }
+
+    // Invalidate group picks cache for this week by clearing the sync timestamp
+    // This ensures the group picks view refreshes to show the updated pick
+    try {
+      const { createClient: createSupabaseClient } = await import("@supabase/supabase-js")
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+      
+      if (supabaseUrl && supabaseServiceKey) {
+        const serviceSupabase = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+          },
+        })
+        
+        // Clear the sync timestamp to force a refresh on next group picks fetch
+        const key = `last_games_sync_${game.season}_${game.week}`
+        await serviceSupabase
+          .from("app_config")
+          .delete()
+          .eq("key", key)
+      }
+    } catch (error) {
+      // Non-critical - log but don't fail the pick update
+      console.error("Error invalidating group picks cache:", error)
     }
 
     return createSuccessResponse(updatedPick, { message: "Pick updated successfully" })

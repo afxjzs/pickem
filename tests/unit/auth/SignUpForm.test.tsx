@@ -55,7 +55,7 @@ describe("SignUpForm", () => {
 		// Should show success message
 		expect(
 			screen.getByText(
-				"Account created successfully! Redirecting to dashboard..."
+				"Account created successfully! Redirecting to setup..."
 			)
 		).toBeInTheDocument()
 		// Should redirect after delay (we'll test this with a timer mock if needed)
@@ -127,7 +127,7 @@ describe("SignUpForm", () => {
 		expect(submitButton).toBeDisabled()
 	})
 
-	it("should redirect to dashboard if already signed in", () => {
+	it("should redirect to onboarding if already signed in", () => {
 		mockUseAuth.mockReturnValue({
 			signUp: mockSignUp,
 			loading: false,
@@ -137,7 +137,7 @@ describe("SignUpForm", () => {
 		render(<SignUpForm />)
 
 		// Should redirect immediately
-		expect(mockPush).toHaveBeenCalledWith("/dashboard")
+		expect(mockPush).toHaveBeenCalledWith("/onboarding")
 	})
 
 	it("should not log user validation errors to console", async () => {

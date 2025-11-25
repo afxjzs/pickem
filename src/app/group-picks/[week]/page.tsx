@@ -11,7 +11,7 @@ import type { Game, Pick } from "@/lib/types/database"
 import { getWinningTeam, isPickCorrect } from "@/lib/utils/scoring"
 
 export default function GroupPicksPage() {
-	const { user } = useAuth()
+	const { user, loading: authLoading } = useAuth()
 	const router = useRouter()
 	const params = useParams()
 	const [groupPicksData, setGroupPicksData] = useState<GroupPicksResponse | null>(null)
@@ -20,6 +20,14 @@ export default function GroupPicksPage() {
 	const [season, setSeason] = useState("2025")
 	const [groupPicksWeek, setGroupPicksWeek] = useState<number | null>(null)
 	const [currentWeek, setCurrentWeek] = useState<number | null>(null)
+	
+	// Store user ID in state to persist across re-renders
+	const [userId, setUserId] = useState<string | null>(null)
+	useEffect(() => {
+		if (user?.id) {
+			setUserId(user.id)
+		}
+	}, [user?.id])
 
 	const allWeeks = useMemo(() => Array.from({ length: 18 }, (_, i) => i + 1), [])
 
@@ -90,36 +98,39 @@ export default function GroupPicksPage() {
 			fetchGroupPicks()
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [groupPicksWeek, season])
+	}, [groupPicksWeek, season, currentWeek])
 
-	const fetchGroupPicks = async () => {
-		// Check cache first
-		const cached = groupPicksCache.get(groupPicksWeek)
-		if (cached) {
-			// Check if cached data has spread information
-			const hasSpreadData = cached.games.some(g => g.spread !== null && g.spread !== undefined)
-			if (hasSpreadData || cached.games.every(g => g.status === "final")) {
-				setGroupPicksData(cached)
-				setLoadingGroupPicks(false)
-				return
-			} else {
-				// Remove from cache if spread data is missing
-				setGroupPicksCache(prev => {
-					const newCache = new Map(prev)
-					newCache.delete(groupPicksWeek)
-					return newCache
-				})
-			}
+	const fetchGroupPicksInBackground = async () => {
+		setLoadingGroupPicks(true)
+		if (!groupPicksCache.has(groupPicksWeek)) {
+			setGroupPicksData(null) // Only clear if no cache
 		}
 
-		setLoadingGroupPicks(true)
-		setGroupPicksData(null) // Clear old data immediately
-
 		try {
-			const url = `/api/group-picks?season=${season}&week=${groupPicksWeek}&_t=${Date.now()}`
-			const response = await fetch(url, {
-				cache: 'no-store',
-			})
+			// For completed weeks, use normal fetch (respect HTTP cache)
+			// For current week, use cache-busting
+			const isCurrentWeek = currentWeek !== null && groupPicksWeek === currentWeek
+			const url = isCurrentWeek
+				? `/api/group-picks?season=${season}&week=${groupPicksWeek}&_t=${Date.now()}`
+				: `/api/group-picks?season=${season}&week=${groupPicksWeek}`
+
+			const fetchOptions: RequestInit = isCurrentWeek
+				? { cache: 'no-store' }
+				: { cache: 'default' } // Respect HTTP cache headers
+
+			const response = await fetch(url, fetchOptions)
+
+			// Handle 304 Not Modified
+			if (response.status === 304) {
+				// Use cached data
+				const cached = groupPicksCache.get(groupPicksWeek)
+				if (cached) {
+					setGroupPicksData(cached)
+				}
+				setLoadingGroupPicks(false)
+				return
+			}
+
 			const data = await response.json()
 
 			if (data.success && data.data) {
@@ -140,6 +151,58 @@ export default function GroupPicksPage() {
 		}
 	}
 
+	const fetchGroupPicks = async () => {
+		if (groupPicksWeek === null) return
+
+		const isCurrentWeek = currentWeek !== null && groupPicksWeek === currentWeek
+
+		// Check cache first (stale-while-revalidate pattern)
+		const cached = groupPicksCache.get(groupPicksWeek)
+		if (cached) {
+			// For completed weeks, check if they're ACTUALLY complete (final WITH scores)
+			const allGamesComplete = cached.games.every(g => 
+				g.status === "final" && 
+				g.home_score !== null && 
+				g.away_score !== null
+			)
+			
+			if (allGamesComplete) {
+				setGroupPicksData(cached)
+				setLoadingGroupPicks(false)
+				// Still fetch in background to update cache if needed
+				fetchGroupPicksInBackground()
+				return
+			}
+
+			// For current week, show cached data immediately but fetch fresh
+			if (isCurrentWeek) {
+				setGroupPicksData(cached)
+				setLoadingGroupPicks(false)
+				// Fetch fresh data in background
+				fetchGroupPicksInBackground()
+				return
+			}
+
+			// For past weeks (not complete), check if cache has spread data
+			const hasSpreadData = cached.games.some(g => g.spread !== null && g.spread !== undefined)
+			if (hasSpreadData) {
+				setGroupPicksData(cached)
+				setLoadingGroupPicks(false)
+				return
+			} else {
+				// Remove from cache if data is incomplete
+				setGroupPicksCache(prev => {
+					const newCache = new Map(prev)
+					newCache.delete(groupPicksWeek)
+					return newCache
+				})
+			}
+		}
+
+		// No cache or cache invalid, fetch fresh data
+		await fetchGroupPicksInBackground()
+	}
+
 	const handleGroupPicksWeekChange = (newWeek: number) => {
 		if (newWeek === groupPicksWeek) {
 			return
@@ -151,8 +214,9 @@ export default function GroupPicksPage() {
 		setLoadingGroupPicks(true)
 	}
 
-	const isCurrentUser = (userId: string) => {
-		return user?.id === userId
+	const isCurrentUser = (checkUserId: string) => {
+		// Use both current user state and stored userId to handle intermittent auth state
+		return (user?.id === checkUserId) || (userId === checkUserId)
 	}
 
 	const getUserPickForGame = (userPicks: UserPickData, gameId: string) => {
@@ -391,7 +455,6 @@ export default function GroupPicksPage() {
 													
 													// Current user's picks are always shown, or game has started - show picks
 
-													// Game has started (live or final) - show picks
 													// If no pick exists, show blank
 													if (!pick) {
 														return (
@@ -403,6 +466,37 @@ export default function GroupPicksPage() {
 														)
 													}
 
+													// Current user can always see their own picks, even if incomplete
+													// Show team abbreviation if picked, even if confidence points aren't set yet
+													if (isUser) {
+														if (!pick.picked_team) {
+															// No team picked yet - show blank
+															return (
+																<td
+																	key={game.id}
+																	className="px-2 py-3 text-center text-sm"
+																>
+																</td>
+															)
+														}
+														
+														// User has picked a team - show it, even if confidence points aren't set
+														const teamAbbr = getTeamAbbreviation(game, pick.picked_team)
+														
+														// If confidence points aren't set, show just the team
+														if (pick.confidence_points === 0 || !pick.confidence_points) {
+															return (
+																<td
+																	key={game.id}
+																	className="px-2 py-3 text-center text-sm font-medium text-gray-700"
+																>
+																	{teamAbbr}
+																</td>
+															)
+														}
+													}
+
+													// For other users or if game has started, show full pick info
 													// If pick exists but is incomplete (missing team or confidence points), show "--"
 													if (!pick.picked_team || pick.confidence_points === 0) {
 														return (

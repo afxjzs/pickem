@@ -10,6 +10,17 @@ function Navigation() {
 	const { user, loading, signOut } = useAuth()
 	const router = useRouter()
 	const pathname = usePathname()
+	
+	// Debug logging in dev mode
+	if (process.env.NODE_ENV === 'development') {
+		console.log('[Navigation] Render:', {
+			hasUser: !!user,
+			userId: user?.id,
+			userEmail: user?.email,
+			loading,
+			pathname
+		})
+	}
 
 	const handleSignOut = async () => {
 		await signOut()
