@@ -59,7 +59,9 @@ export default function ProfilePage() {
 		// Validate username format
 		const usernameRegex = /^[a-zA-Z0-9_-]+$/
 		if (!usernameRegex.test(username)) {
-			setUsernameError("Username can only contain letters, numbers, underscores, and hyphens")
+			setUsernameError(
+				"Username can only contain letters, numbers, underscores, and hyphens"
+			)
 			return
 		}
 
@@ -79,7 +81,9 @@ export default function ProfilePage() {
 			setUsernameError(null)
 
 			try {
-				const response = await fetch(`/api/users/check-username?username=${encodeURIComponent(username)}`)
+				const response = await fetch(
+					`/api/users/check-username?username=${encodeURIComponent(username)}`
+				)
 				const result = await response.json()
 
 				if (!result.success) {
@@ -190,7 +194,12 @@ export default function ProfilePage() {
 		return null // Will redirect
 	}
 
-	const isFormValid = firstName.trim() && lastName.trim() && username.trim() && !usernameError && !isCheckingUsername
+	const isFormValid =
+		firstName.trim() &&
+		lastName.trim() &&
+		username.trim() &&
+		!usernameError &&
+		!isCheckingUsername
 
 	return (
 		<div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -205,7 +214,9 @@ export default function ProfilePage() {
 				</div>
 
 				<div className="bg-white rounded-lg shadow-sm p-8">
-					<h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Profile</h1>
+					<h1 className="text-2xl font-bold text-gray-900 mb-6">
+						Edit Profile
+					</h1>
 
 					{error && (
 						<div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
@@ -221,7 +232,10 @@ export default function ProfilePage() {
 
 					<form onSubmit={handleSubmit} className="space-y-6">
 						<div>
-							<label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+							<label
+								htmlFor="email"
+								className="block text-sm font-medium text-gray-700 mb-1"
+							>
 								Email
 							</label>
 							<input
@@ -231,11 +245,16 @@ export default function ProfilePage() {
 								disabled
 								className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-700 cursor-not-allowed"
 							/>
-							<p className="mt-1 text-sm text-gray-600">Email cannot be changed</p>
+							<p className="mt-1 text-sm text-gray-600">
+								Email cannot be changed
+							</p>
 						</div>
 
 						<div>
-							<label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+							<label
+								htmlFor="firstName"
+								className="block text-sm font-medium text-gray-700 mb-1"
+							>
 								First Name <span className="text-red-500">*</span>
 							</label>
 							<input
@@ -245,12 +264,15 @@ export default function ProfilePage() {
 								value={firstName}
 								onChange={(e) => setFirstName(e.target.value)}
 								className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-								placeholder="John"
+								placeholder="Tom"
 							/>
 						</div>
 
 						<div>
-							<label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+							<label
+								htmlFor="lastName"
+								className="block text-sm font-medium text-gray-700 mb-1"
+							>
 								Last Name <span className="text-red-500">*</span>
 							</label>
 							<input
@@ -260,12 +282,15 @@ export default function ProfilePage() {
 								value={lastName}
 								onChange={(e) => setLastName(e.target.value)}
 								className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-								placeholder="Doe"
+								placeholder="Brady"
 							/>
 						</div>
 
 						<div>
-							<label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+							<label
+								htmlFor="username"
+								className="block text-sm font-medium text-gray-700 mb-1"
+							>
 								Username <span className="text-red-500">*</span>
 							</label>
 							<input
@@ -275,24 +300,35 @@ export default function ProfilePage() {
 								value={username}
 								onChange={(e) => setUsername(e.target.value.toLowerCase())}
 								className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-								placeholder="johndoe"
+								placeholder="the_goat"
 							/>
 							{isCheckingUsername && (
-								<p className="mt-1 text-sm text-gray-600">Checking availability...</p>
+								<p className="mt-1 text-sm text-gray-600">
+									Checking availability...
+								</p>
 							)}
 							{usernameError && (
 								<p className="mt-1 text-sm text-red-600">{usernameError}</p>
 							)}
-							{!usernameError && username.trim().length > 0 && !isCheckingUsername && username !== originalUsernameRef.current && (
-								<p className="mt-1 text-sm text-green-600">✓ Username available</p>
-							)}
-							{username === originalUsernameRef.current && username.trim().length > 0 && (
-								<p className="mt-1 text-sm text-gray-600">Current username</p>
-							)}
+							{!usernameError &&
+								username.trim().length > 0 &&
+								!isCheckingUsername &&
+								username !== originalUsernameRef.current && (
+									<p className="mt-1 text-sm text-green-600">
+										✓ Username available
+									</p>
+								)}
+							{username === originalUsernameRef.current &&
+								username.trim().length > 0 && (
+									<p className="mt-1 text-sm text-gray-600">Current username</p>
+								)}
 						</div>
 
 						<div>
-							<label htmlFor="avatarUrl" className="block text-sm font-medium text-gray-700 mb-1">
+							<label
+								htmlFor="avatarUrl"
+								className="block text-sm font-medium text-gray-700 mb-1"
+							>
 								Avatar URL (optional)
 							</label>
 							<input
@@ -303,7 +339,9 @@ export default function ProfilePage() {
 								className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
 								placeholder="https://example.com/avatar.jpg"
 							/>
-							<p className="mt-1 text-sm text-gray-600">Add a profile picture URL (optional)</p>
+							<p className="mt-1 text-sm text-gray-600">
+								Add a profile picture URL (optional)
+							</p>
 						</div>
 
 						<div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
@@ -327,4 +365,3 @@ export default function ProfilePage() {
 		</div>
 	)
 }
-

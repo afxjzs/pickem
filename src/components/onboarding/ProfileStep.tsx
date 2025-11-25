@@ -41,7 +41,9 @@ export function ProfileStep({ onNext, initialData }: ProfileStepProps) {
 		// Validate username format
 		const usernameRegex = /^[a-zA-Z0-9_-]+$/
 		if (!usernameRegex.test(username)) {
-			setUsernameError("Username can only contain letters, numbers, underscores, and hyphens")
+			setUsernameError(
+				"Username can only contain letters, numbers, underscores, and hyphens"
+			)
 			return
 		}
 
@@ -61,15 +63,45 @@ export function ProfileStep({ onNext, initialData }: ProfileStepProps) {
 			setUsernameError(null)
 
 			try {
-				const response = await fetch(`/api/users/check-username?username=${encodeURIComponent(username)}`, {
-					credentials: 'include',
-				})
-				const result = await response.json()
+				// Retry logic for production where session might not be immediately available
+				let lastError: string | null = null
+				let retries = 2
 
-				if (!result.success) {
-					setUsernameError(result.message || "Error checking username")
-				} else if (!result.data.available) {
-					setUsernameError("Username is already taken")
+				while (retries >= 0) {
+					const response = await fetch(
+						`/api/users/check-username?username=${encodeURIComponent(
+							username
+						)}`,
+						{
+							credentials: "include",
+							headers: {
+								"Cache-Control": "no-cache",
+							},
+						}
+					)
+					const result = await response.json()
+
+					if (!result.success) {
+						// If it's a 401 and we have retries left, wait a bit and retry
+						if (response.status === 401 && retries > 0) {
+							lastError = result.message || "Error checking username"
+							await new Promise((resolve) => setTimeout(resolve, 500))
+							retries--
+							continue
+						}
+						setUsernameError(result.message || "Error checking username")
+						break
+					} else if (!result.data.available) {
+						setUsernameError("Username is already taken")
+						break
+					} else {
+						// Success - username is available
+						break
+					}
+				}
+
+				if (lastError && retries < 0) {
+					setUsernameError(lastError)
 				}
 			} catch (error) {
 				console.error("Error checking username:", error)
@@ -105,18 +137,30 @@ export function ProfileStep({ onNext, initialData }: ProfileStepProps) {
 		})
 	}
 
-	const isFormValid = firstName.trim() && lastName.trim() && username.trim() && !usernameError && !isCheckingUsername
+	const isFormValid =
+		firstName.trim() &&
+		lastName.trim() &&
+		username.trim() &&
+		!usernameError &&
+		!isCheckingUsername
 
 	return (
 		<form onSubmit={handleSubmit} className="space-y-6">
 			<div>
-				<h2 className="text-2xl font-bold text-gray-900 mb-2">Create Your Profile</h2>
-				<p className="text-gray-600">Let's set up your profile to get started</p>
+				<h2 className="text-2xl font-bold text-gray-900 mb-2">
+					Create Your Profile
+				</h2>
+				<p className="text-gray-600">
+					Let's set up your profile to get started
+				</p>
 			</div>
 
 			<div className="space-y-4">
 				<div>
-					<label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+					<label
+						htmlFor="firstName"
+						className="block text-sm font-medium text-gray-700 mb-1"
+					>
 						First Name <span className="text-red-500">*</span>
 					</label>
 					<input
@@ -126,12 +170,15 @@ export function ProfileStep({ onNext, initialData }: ProfileStepProps) {
 						value={firstName}
 						onChange={(e) => setFirstName(e.target.value)}
 						className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-						placeholder="John"
+						placeholder="Tom"
 					/>
 				</div>
 
 				<div>
-					<label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+					<label
+						htmlFor="lastName"
+						className="block text-sm font-medium text-gray-700 mb-1"
+					>
 						Last Name <span className="text-red-500">*</span>
 					</label>
 					<input
@@ -141,12 +188,15 @@ export function ProfileStep({ onNext, initialData }: ProfileStepProps) {
 						value={lastName}
 						onChange={(e) => setLastName(e.target.value)}
 						className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-						placeholder="Doe"
+						placeholder="Brady"
 					/>
 				</div>
 
 				<div>
-					<label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+					<label
+						htmlFor="username"
+						className="block text-sm font-medium text-gray-700 mb-1"
+					>
 						Username <span className="text-red-500">*</span>
 					</label>
 					<input
@@ -156,21 +206,30 @@ export function ProfileStep({ onNext, initialData }: ProfileStepProps) {
 						value={username}
 						onChange={(e) => setUsername(e.target.value.toLowerCase())}
 						className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-						placeholder="johndoe"
+						placeholder="the_goat"
 					/>
 					{isCheckingUsername && (
-						<p className="mt-1 text-sm text-gray-600">Checking availability...</p>
+						<p className="mt-1 text-sm text-gray-600">
+							Checking availability...
+						</p>
 					)}
 					{usernameError && (
 						<p className="mt-1 text-sm text-red-600">{usernameError}</p>
 					)}
-					{!usernameError && username.trim().length > 0 && !isCheckingUsername && (
-						<p className="mt-1 text-sm text-green-600">✓ Username available</p>
-					)}
+					{!usernameError &&
+						username.trim().length > 0 &&
+						!isCheckingUsername && (
+							<p className="mt-1 text-sm text-green-600">
+								✓ Username available
+							</p>
+						)}
 				</div>
 
 				<div>
-					<label htmlFor="avatarUrl" className="block text-sm font-medium text-gray-700 mb-1">
+					<label
+						htmlFor="avatarUrl"
+						className="block text-sm font-medium text-gray-700 mb-1"
+					>
 						Avatar URL (optional)
 					</label>
 					<input
@@ -181,7 +240,9 @@ export function ProfileStep({ onNext, initialData }: ProfileStepProps) {
 						className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
 						placeholder="https://example.com/avatar.jpg"
 					/>
-					<p className="mt-1 text-sm text-gray-600">Add a profile picture URL (optional)</p>
+					<p className="mt-1 text-sm text-gray-600">
+						Add a profile picture URL (optional)
+					</p>
 				</div>
 			</div>
 
@@ -197,4 +258,3 @@ export function ProfileStep({ onNext, initialData }: ProfileStepProps) {
 		</form>
 	)
 }
-

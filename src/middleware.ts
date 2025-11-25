@@ -42,13 +42,14 @@ export async function middleware(request: NextRequest) {
 		}
 	)
 
-	// Refresh session if expired - required for Server Components and API routes
-	// https://supabase.com/docs/guides/auth/auth-helpers/nextjs#managing-session-with-middleware
-	const { data: { user } } = await supabase.auth.getUser()
+	// IMPORTANT: Call getUser() to refresh the session if expired
+	// This must be awaited to ensure the session is refreshed before the request continues
+	// The response will contain updated cookies if the session was refreshed
+	const { data: { user }, error } = await supabase.auth.getUser()
 	
 	// Log for debugging
 	if (request.nextUrl.pathname.startsWith('/api/')) {
-		console.log(`[Middleware] API route ${request.nextUrl.pathname}, user: ${user ? user.id : 'none'}`)
+		console.log(`[Middleware] API route ${request.nextUrl.pathname}, user: ${user ? user.id : 'none'}, error: ${error?.message || 'none'}`)
 	}
 
 	return response
