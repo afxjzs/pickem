@@ -154,6 +154,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 					return
 				}
 				
+				// Handle sign out event explicitly
+				if (event === 'SIGNED_OUT') {
+					console.log('[AuthContext] User signed out, clearing state')
+					setUser(null)
+					setLoading(false)
+					return
+				}
+				
 				console.log('[AuthContext] Updating user state from auth state change')
 				setUser(session?.user ?? null)
 				setLoading(false)
@@ -263,9 +271,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 	const signOut = async (): Promise<{ error: string | null }> => {
 		try {
+			console.log('[AuthContext] Signing out...')
 			const { error } = await supabase.auth.signOut()
-			return { error: error?.message || null }
-		} catch {
+			
+			// Explicitly clear user state immediately
+			// The auth state change listener will also fire, but this ensures immediate UI update
+			setUser(null)
+			setLoading(false)
+			
+			if (error) {
+				console.error('[AuthContext] Sign out error:', error)
+				return { error: error.message }
+			}
+			
+			console.log('[AuthContext] Sign out successful')
+			return { error: null }
+		} catch (error) {
+			console.error('[AuthContext] Unexpected error during sign out:', error)
+			// Still clear user state even if there's an error
+			setUser(null)
+			setLoading(false)
 			return { error: 'An unexpected error occurred' }
 		}
 	}

@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
 		}
 
 		// Check if username is already taken (excluding current user)
+		// The client is configured with db: { schema: 'pickem' } so this should query the pickem schema
 		const { data: existingUser, error: checkError } = await supabase
 			.from('users')
 			.select('id, username')

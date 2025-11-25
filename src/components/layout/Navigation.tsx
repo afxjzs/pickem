@@ -23,8 +23,22 @@ function Navigation() {
 	}
 
 	const handleSignOut = async () => {
-		await signOut()
-		router.push("/")
+		try {
+			console.log('[Navigation] Sign out button clicked')
+			const { error } = await signOut()
+			if (error) {
+				console.error('[Navigation] Sign out error:', error)
+				// Still redirect even if there's an error
+			}
+			// Redirect to home page after sign out
+			router.push("/")
+			// Force a page reload to ensure all state is cleared
+			router.refresh()
+		} catch (error) {
+			console.error('[Navigation] Unexpected error during sign out:', error)
+			// Still redirect even if there's an error
+			router.push("/")
+		}
 	}
 
 	const isActive = (path: string) => {
