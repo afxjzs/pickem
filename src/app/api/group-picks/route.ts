@@ -51,13 +51,13 @@ async function batchRecalculateScores(
 
 	// Group picks by user_id
 	const picksByUser = new Map<string, Pick[]>()
-	allPicks.forEach((pick: Pick) => {
-		const userId = pick.user_id
+	for (const pick of allPicks as unknown as Pick[]) {
+		const userId = String(pick.user_id)
 		if (!picksByUser.has(userId)) {
 			picksByUser.set(userId, [])
 		}
 		picksByUser.get(userId)!.push(pick)
-	})
+	}
 
 	// Calculate scores for all users in parallel (in-memory)
 	const scoresToUpsert: Array<{
@@ -70,11 +70,12 @@ async function batchRecalculateScores(
 	}> = []
 
 	for (const user of allUsers) {
-		const userPicks = picksByUser.get(user.id) || []
+		const userId = String(user.id)
+		const userPicks = picksByUser.get(userId) || []
 		const scoreData = calculateWeeklyScore(userPicks, games)
 		
 		scoresToUpsert.push({
-			user_id: user.id,
+			user_id: userId,
 			week,
 			season,
 			points: scoreData.points,
@@ -144,21 +145,22 @@ async function syncGameOddsForWeek(
 		
 		// Fetch odds for batch in parallel
 		const oddsPromises = batch.map(async (game) => {
-			if (!game.espn_id) {
+			const espnId = game.espn_id as string | undefined
+			if (!espnId) {
 				return null
 			}
 
 			try {
-				const odds = await espnAPI.getGameOdds(game.espn_id)
+				const odds = await espnAPI.getGameOdds(espnId)
 				if (odds) {
 					return {
-						gameId: game.id,
+						gameId: String(game.id),
 						spread: odds.spread,
 						overUnder: odds.overUnder,
 					}
 				}
 			} catch (error) {
-				console.error(`Error syncing odds for game ${game.espn_id}:`, error)
+				console.error(`Error syncing odds for game ${espnId}:`, error)
 			}
 			return null
 		})
@@ -169,7 +171,7 @@ async function syncGameOddsForWeek(
 		results.forEach((result) => {
 			if (result) {
 				updates.push({
-					gameId: result.gameId,
+					gameId: String(result.gameId),
 					spread: result.spread,
 					over_under: result.overUnder,
 				})
@@ -453,7 +455,7 @@ export async function GET(request: NextRequest) {
 							if (updatedGames) {
 								console.log(`🔄 Recalculating scores for week ${weekNumber}`)
 								await batchRecalculateScores(
-									serviceSupabase,
+									serviceSupabase as any,
 									weekNumber,
 									season,
 									updatedGames as Game[]
@@ -545,7 +547,7 @@ export async function GET(request: NextRequest) {
 			
 			if (gamesMissingSpread) {
 				// Sync odds in background (don't wait for it)
-				syncGameOddsForWeek(supabase, parseInt(season), weekNumber).catch(error => {
+				syncGameOddsForWeek(supabase as any, parseInt(season), weekNumber).catch(error => {
 					console.error("Error syncing odds (non-fatal):", error)
 				})
 			}

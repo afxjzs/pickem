@@ -3,7 +3,7 @@
 // src/app/leaderboard/picks/page.tsx
 // Group Picks View - Shows all users' picks for a specific week
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
 import { useAuth } from "@/lib/contexts/AuthContext"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -11,7 +11,7 @@ import type { GroupPicksResponse, UserPickData } from "@/app/api/group-picks/rou
 import type { Game, Team, Pick } from "@/lib/types/database"
 import { isPickCorrect } from "@/lib/utils/scoring"
 
-export default function GroupPicksPage() {
+function GroupPicksContent() {
 	const { user } = useAuth()
 	const router = useRouter()
 	const searchParams = useSearchParams()
@@ -360,6 +360,21 @@ export default function GroupPicksPage() {
 				)}
 			</div>
 		</div>
+	)
+}
+
+export default function GroupPicksPage() {
+	return (
+		<Suspense fallback={
+			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
+				<div className="text-center">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+					<p className="mt-4 text-gray-600">Loading...</p>
+				</div>
+			</div>
+		}>
+			<GroupPicksContent />
+		</Suspense>
 	)
 }
 

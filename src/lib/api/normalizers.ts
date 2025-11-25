@@ -2,7 +2,7 @@
 // Transforms ESPN data structures into our database schema format
 
 import type { ESPNTeam, ESPNGame, ESPNStanding } from "./espn"
-import type { Team, Database } from "@/lib/types/database"
+import type { Team, Game } from "@/lib/types/database"
 
 export interface NormalizedGame
 	extends Omit<Game, "id" | "created_at" | "updated_at"> {
@@ -85,7 +85,7 @@ export function normalizeGame(espnGame: ESPNGame): NormalizedGame {
 	const awayScore = awayTeam.score ? parseInt(awayTeam.score) : undefined
 
 	// Determine game status
-	let status: Database["public"]["Enums"]["game_status"] = "scheduled"
+	let status: "scheduled" | "live" | "final" = "scheduled"
 	if (competition.status.type.completed) {
 		status = "final"
 	} else if (competition.status.type.state === "in") {

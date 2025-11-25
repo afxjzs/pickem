@@ -89,11 +89,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 				if (user) {
 					console.log('[AuthContext] Checking if user exists in users table:', user.id)
 					// Run this in background - don't block the loading state
-					supabase
+					Promise.resolve(supabase
 						.from('users')
 						.select('id')
 						.eq('id', user.id)
-						.maybeSingle()
+						.maybeSingle())
 						.then(({ data: existingUser, error: checkError }) => {
 							console.log('[AuthContext] User check result:', {
 								hasExistingUser: !!existingUser,
@@ -104,7 +104,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 							// Only call create endpoint if user doesn't exist
 							if (!existingUser) {
 								console.log('[AuthContext] User not in database, creating...')
-								fetch('/api/users/create', {
+								return fetch('/api/users/create', {
 									method: 'POST',
 									headers: {
 										'Content-Type': 'application/json',
@@ -112,15 +112,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 									credentials: 'include',
 								}).then(() => {
 									console.log('[AuthContext] User creation API called successfully')
-								}).catch(error => {
-									console.error('[AuthContext] Error ensuring user exists in users table:', error)
-									// Non-critical - user can still use the app
 								})
 							} else {
 								console.log('[AuthContext] User already exists in database')
 							}
 						})
-						.catch(error => {
+						.catch((error: unknown) => {
 							console.error('[AuthContext] Error checking user exists:', error)
 							// Non-critical - user can still use the app
 						})
@@ -160,7 +157,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 				setLoading(false)
 				
 				// If user just signed up or signed in, ensure they exist in users table
-				if ((event === 'SIGNED_IN' || event === 'SIGNED_UP') && session?.user) {
+				if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
 					console.log('[AuthContext] User signed in/up, ensuring user exists in database')
 					try {
 						// Check if user exists first

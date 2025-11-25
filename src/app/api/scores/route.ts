@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { createClient as createSupabaseClient } from "@supabase/supabase-js"
+import { createClient } from "@/lib/supabase/server"
 import { createSuccessResponse, handleAPIError } from "@/lib/api/utils"
 import { Score, WeekStanding, SeasonStanding } from "@/lib/types/database"
 
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
 			)
 		}
 
-		const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+		const supabase = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
 			auth: {
 				autoRefreshToken: false,
 				persistSession: false,

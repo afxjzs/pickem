@@ -101,6 +101,8 @@ export default function GroupPicksPage() {
 	}, [groupPicksWeek, season, currentWeek])
 
 	const fetchGroupPicksInBackground = async () => {
+		if (groupPicksWeek === null) return
+		
 		setLoadingGroupPicks(true)
 		if (!groupPicksCache.has(groupPicksWeek)) {
 			setGroupPicksData(null) // Only clear if no cache
