@@ -144,7 +144,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 					hasSession: !!session,
 					hasUser: !!session?.user,
 					userId: session?.user?.id,
-					mounted
+					mounted,
+					// Log cookie status for debugging
+					documentCookies: typeof document !== 'undefined' ? document.cookie.split(';').filter(c => c.includes('auth')).length : 0
 				})
 				
 				if (!mounted) {
@@ -219,9 +221,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 	const signUp = async (email: string, password: string): Promise<{ error: string | null }> => {
 		try {
-			const { data, error } = await supabase.auth.signUp({ email, password })
+			const { data, error } = await supabase.auth.signUp({ 
+				email, 
+				password,
+				options: {
+					emailRedirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/onboarding`,
+				}
+			})
 			if (error) {
 				return { error: error.message }
+			}
+
+			// Log session status for debugging
+			if (data.session) {
+				console.log('[AuthContext] Session established after signup:', data.session.user.id)
+				// Session is available - cookies should be set by the browser client
+				// Wait a moment for cookies to be set before proceeding
+				await new Promise(resolve => setTimeout(resolve, 100))
+			} else {
+				console.warn('[AuthContext] No session returned from signup')
+				console.log('[AuthContext] Signup data:', { 
+					user: data.user?.id, 
+					hasSession: !!data.session,
+					needsEmailConfirmation: !data.session && !!data.user
+				})
+				// If email confirmation was required, the session won't be available yet
+				// But since we disabled it, this shouldn't happen - log as error
+				if (!data.session && data.user) {
+					console.error('[AuthContext] User created but no session - this should not happen with email confirmation disabled')
+				}
 			}
 
 			// Don't create user in users table here - will be created during onboarding

@@ -53,7 +53,10 @@ export function SignUpForm() {
 				// Clear form
 				setEmail("")
 				setPassword("")
-				// Redirect to onboarding after a short delay
+				// Wait for session to be established and cookies to be set
+				// With email confirmation disabled, session should be available immediately
+				// The auth state change listener will update the user state
+				// Give it time to process and set cookies before redirecting
 				setTimeout(() => {
 					router.push("/onboarding")
 				}, 1500)

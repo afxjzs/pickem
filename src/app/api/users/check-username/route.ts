@@ -8,15 +8,19 @@ export async function GET(request: NextRequest) {
 		const supabase = await createClient()
 
 		// Auth check - user must be authenticated
+		// Try to get the session first to see if we can refresh it
+		const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 		const { data: authData, error: authError } = await supabase.auth.getUser()
 		
 		// Log for debugging in production
 		if (!authData?.user) {
 			console.error(`[check-username] Auth failed:`, {
 				hasUser: !!authData?.user,
-				error: authError?.message,
+				hasSession: !!session,
+				authError: authError?.message,
+				sessionError: sessionError?.message,
 				path: request.nextUrl.pathname,
-				cookies: request.cookies.getAll().map(c => c.name),
+				cookies: request.cookies.getAll().map(c => `${c.name}=${c.value.substring(0, 20)}...`),
 			})
 			return createErrorResponse("Unauthorized", "User must be authenticated", 401)
 		}
