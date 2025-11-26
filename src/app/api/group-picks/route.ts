@@ -154,26 +154,28 @@ async function syncGameOddsForWeek(
 		const batch = gamesToSync.slice(i, i + batchSize)
 
 		// Fetch odds for batch in parallel
-		const oddsPromises = batch.map(async (game) => {
-			const espnId = game.espn_id as string | undefined
-			if (!espnId) {
+		const oddsPromises = batch.map(
+			async (game: { espn_id: string | undefined; id: string }) => {
+				const espnId = game.espn_id as string | undefined
+				if (!espnId) {
+					return null
+				}
+
+				try {
+					const odds = await espnAPI.getGameOdds(espnId)
+					if (odds) {
+						return {
+							gameId: String(game.id),
+							spread: odds.spread,
+							overUnder: odds.overUnder,
+						}
+					}
+				} catch (error) {
+					console.error(`Error syncing odds for game ${espnId}:`, error)
+				}
 				return null
 			}
-
-			try {
-				const odds = await espnAPI.getGameOdds(espnId)
-				if (odds) {
-					return {
-						gameId: String(game.id),
-						spread: odds.spread,
-						overUnder: odds.overUnder,
-					}
-				}
-			} catch (error) {
-				console.error(`Error syncing odds for game ${espnId}:`, error)
-			}
-			return null
-		})
+		)
 
 		const results = await Promise.all(oddsPromises)
 
