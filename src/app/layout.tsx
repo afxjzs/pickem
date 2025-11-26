@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "@/lib/contexts/AuthContext"
 import Navigation from "@/components/layout/Navigation"
+import MobileBottomNav from "@/components/layout/MobileBottomNav"
 
 const geistSans = Geist({
 	variable: "--font-geist-sans",
@@ -32,7 +33,10 @@ export default function RootLayout({
 			>
 				<AuthProvider>
 					<Navigation />
-					{children}
+					<div className="pb-16 md:pb-0">
+						{children}
+					</div>
+					<MobileBottomNav />
 				</AuthProvider>
 			</body>
 		</html>

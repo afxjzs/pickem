@@ -584,21 +584,16 @@ class ESPNAPIService {
 			const espnWeek = data.week?.number || 1
 			const season = data.season?.year || 2025
 
-			// Check if it's after noon Tuesday ET - if so, increment week
-			const now = new Date()
-			// Convert to ET (Eastern Time)
-			const etTime = new Date(
-				now.toLocaleString("en-US", { timeZone: "America/New_York" })
-			)
-			const dayOfWeek = etTime.getDay() // 0 = Sunday, 1 = Monday, 2 = Tuesday, etc.
-			const hour = etTime.getHours()
+			// Use proper ET timezone calculation
+			const { getETTime } = await import("@/lib/utils/timezone")
+			const et = getETTime()
 
 			// If it's Tuesday and after noon ET, or Wednesday or later, increment week
 			let currentWeek = espnWeek
-			if (dayOfWeek === 2 && hour >= 12) {
+			if (et.dayOfWeek === 2 && et.hour >= 12) {
 				// Tuesday at or after noon ET - week has reset
 				currentWeek = espnWeek + 1
-			} else if (dayOfWeek > 2) {
+			} else if (et.dayOfWeek > 2) {
 				// Wednesday or later - week has reset
 				currentWeek = espnWeek + 1
 			}

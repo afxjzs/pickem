@@ -186,10 +186,8 @@ function LeaderboardContent() {
 								<p className="mt-4 text-sm md:text-base text-gray-600">Loading leaderboard...</p>
 							</div>
 						) : weeklyData && weeklyData.users && weeklyData.users.length > 0 ? (
-							<div className="overflow-x-auto -mx-4 sm:mx-0">
-								<div className="inline-block min-w-full align-middle">
-									<div className="overflow-x-auto">
-										<table className="min-w-full divide-y divide-gray-200">
+							<div className="overflow-x-auto">
+								<table className="min-w-full divide-y divide-gray-200">
 									<thead className="bg-gray-50">
 										<tr>
 											<th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10 border-r border-gray-200">
@@ -253,8 +251,6 @@ function LeaderboardContent() {
 										})}
 									</tbody>
 								</table>
-									</div>
-								</div>
 							</div>
 						) : (
 							<div className="p-6 md:p-8 text-center text-sm md:text-base text-gray-500">
@@ -273,10 +269,8 @@ function LeaderboardContent() {
 								<p className="mt-4 text-sm md:text-base text-gray-600">Loading standings...</p>
 							</div>
 						) : overallData && overallData.length > 0 ? (
-							<div className="overflow-x-auto -mx-4 sm:mx-0">
-								<div className="inline-block min-w-full align-middle">
-									<div className="overflow-x-auto">
-										<table className="min-w-full divide-y divide-gray-200">
+							<div className="overflow-x-auto">
+								<table className="min-w-full divide-y divide-gray-200">
 									<thead className="bg-gray-50">
 										<tr>
 											<th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10 border-r border-gray-200">
@@ -346,8 +340,6 @@ function LeaderboardContent() {
 										})}
 									</tbody>
 								</table>
-									</div>
-								</div>
 							</div>
 						) : (
 							<div className="p-6 md:p-8 text-center text-sm md:text-base text-gray-500">

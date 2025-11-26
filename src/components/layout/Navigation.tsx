@@ -11,24 +11,24 @@ function Navigation() {
 	const router = useRouter()
 	const pathname = usePathname()
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-	
+
 	// Debug logging in dev mode
-	if (process.env.NODE_ENV === 'development') {
-		console.log('[Navigation] Render:', {
+	if (process.env.NODE_ENV === "development") {
+		console.log("[Navigation] Render:", {
 			hasUser: !!user,
 			userId: user?.id,
 			userEmail: user?.email,
 			loading,
-			pathname
+			pathname,
 		})
 	}
 
 	const handleSignOut = async () => {
 		try {
-			console.log('[Navigation] Sign out button clicked')
+			console.log("[Navigation] Sign out button clicked")
 			const { error } = await signOut()
 			if (error) {
-				console.error('[Navigation] Sign out error:', error)
+				console.error("[Navigation] Sign out error:", error)
 				// Still redirect even if there's an error
 			}
 			// Redirect to home page after sign out
@@ -36,7 +36,7 @@ function Navigation() {
 			// Force a page reload to ensure all state is cleared
 			router.refresh()
 		} catch (error) {
-			console.error('[Navigation] Unexpected error during sign out:', error)
+			console.error("[Navigation] Unexpected error during sign out:", error)
 			// Still redirect even if there's an error
 			router.push("/")
 		}
@@ -46,8 +46,17 @@ function Navigation() {
 		if (path === "/leaderboard") {
 			return pathname === "/leaderboard"
 		}
+		if (path === "/leaderboard/weeks") {
+			return pathname === "/leaderboard/weeks"
+		}
+		if (path === "/leaderboard/standings") {
+			return pathname === "/leaderboard/standings"
+		}
 		if (path === "/group-picks") {
 			return pathname === "/group-picks" || pathname.startsWith("/group-picks")
+		}
+		if (path === "/picks") {
+			return pathname === "/picks" || pathname.startsWith("/picks")
 		}
 		return pathname === path
 	}
@@ -81,7 +90,9 @@ function Navigation() {
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 				<div className="flex justify-between items-center py-4 md:py-6">
 					<div className="flex items-center space-x-4 md:space-x-8">
-						<h1 className="text-2xl md:text-3xl font-bold text-gray-900">Pick'em</h1>
+						<h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+							Pick'em
+						</h1>
 						{/* Desktop Navigation - Hidden on mobile */}
 						{loading ? (
 							// Show loading state for nav items
@@ -104,7 +115,7 @@ function Navigation() {
 									Dashboard
 								</Link>
 								<Link
-									href="/picks"
+									href="/picks/current"
 									className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
 										isActive("/picks")
 											? "bg-gray-100 text-gray-900"
@@ -114,14 +125,24 @@ function Navigation() {
 									My Picks
 								</Link>
 								<Link
-									href="/leaderboard"
+									href="/leaderboard/weeks"
 									className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-										isActive("/leaderboard")
+										isActive("/leaderboard/weeks")
 											? "bg-gray-100 text-gray-900"
 											: "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
 									}`}
 								>
-									Leaderboard
+									Weeks
+								</Link>
+								<Link
+									href="/leaderboard/standings"
+									className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+										isActive("/leaderboard/standings")
+											? "bg-gray-100 text-gray-900"
+											: "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+									}`}
+								>
+									Standings
 								</Link>
 								<Link
 									href="/group-picks/current-week"
@@ -132,16 +153,6 @@ function Navigation() {
 									}`}
 								>
 									Group Picks
-								</Link>
-								<Link
-									href="/data"
-									className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-										isActive("/data")
-											? "bg-gray-100 text-gray-900"
-											: "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-									}`}
-								>
-									NFL Data
 								</Link>
 							</nav>
 						) : (
@@ -165,19 +176,41 @@ function Navigation() {
 								aria-label="Toggle menu"
 							>
 								{isMobileMenuOpen ? (
-									<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+									<svg
+										className="w-6 h-6"
+										fill="none"
+										stroke="currentColor"
+										viewBox="0 0 24 24"
+									>
+										<path
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											strokeWidth={2}
+											d="M6 18L18 6M6 6l12 12"
+										/>
 									</svg>
 								) : (
-									<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+									<svg
+										className="w-6 h-6"
+										fill="none"
+										stroke="currentColor"
+										viewBox="0 0 24 24"
+									>
+										<path
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											strokeWidth={2}
+											d="M4 6h16M4 12h16M4 18h16"
+										/>
 									</svg>
 								)}
 							</button>
 						)}
 						{/* Desktop User Actions */}
 						{loading ? (
-							<div className="hidden md:block text-gray-400 animate-pulse">Loading...</div>
+							<div className="hidden md:block text-gray-400 animate-pulse">
+								Loading...
+							</div>
 						) : user ? (
 							<>
 								<Link
@@ -216,8 +249,11 @@ function Navigation() {
 
 			{/* Mobile Menu Overlay */}
 			{isMobileMenuOpen && user && !loading && (
-				<div className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40" onClick={() => setIsMobileMenuOpen(false)}>
-					<div 
+				<div
+					className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+					onClick={() => setIsMobileMenuOpen(false)}
+				>
+					<div
 						className="fixed inset-y-0 right-0 w-64 bg-white shadow-lg z-50 overflow-y-auto"
 						onClick={(e) => e.stopPropagation()}
 					>
@@ -229,8 +265,18 @@ function Navigation() {
 									className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
 									aria-label="Close menu"
 								>
-									<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+									<svg
+										className="w-6 h-6"
+										fill="none"
+										stroke="currentColor"
+										viewBox="0 0 24 24"
+									>
+										<path
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											strokeWidth={2}
+											d="M6 18L18 6M6 6l12 12"
+										/>
 									</svg>
 								</button>
 							</div>
@@ -247,7 +293,7 @@ function Navigation() {
 									Dashboard
 								</Link>
 								<Link
-									href="/picks"
+									href="/picks/current"
 									onClick={() => setIsMobileMenuOpen(false)}
 									className={`block px-4 py-3 rounded-md text-base font-medium transition-colors ${
 										isActive("/picks")
@@ -258,15 +304,26 @@ function Navigation() {
 									My Picks
 								</Link>
 								<Link
-									href="/leaderboard"
+									href="/leaderboard/weeks"
 									onClick={() => setIsMobileMenuOpen(false)}
 									className={`block px-4 py-3 rounded-md text-base font-medium transition-colors ${
-										isActive("/leaderboard")
+										isActive("/leaderboard/weeks")
 											? "bg-gray-100 text-gray-900"
 											: "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
 									}`}
 								>
-									Leaderboard
+									Weeks
+								</Link>
+								<Link
+									href="/leaderboard/standings"
+									onClick={() => setIsMobileMenuOpen(false)}
+									className={`block px-4 py-3 rounded-md text-base font-medium transition-colors ${
+										isActive("/leaderboard/standings")
+											? "bg-gray-100 text-gray-900"
+											: "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+									}`}
+								>
+									Standings
 								</Link>
 								<Link
 									href="/group-picks/current-week"
@@ -278,17 +335,6 @@ function Navigation() {
 									}`}
 								>
 									Group Picks
-								</Link>
-								<Link
-									href="/data"
-									onClick={() => setIsMobileMenuOpen(false)}
-									className={`block px-4 py-3 rounded-md text-base font-medium transition-colors ${
-										isActive("/data")
-											? "bg-gray-100 text-gray-900"
-											: "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-									}`}
-								>
-									NFL Data
 								</Link>
 							</nav>
 							<div className="mt-6 pt-6 border-t border-gray-200 space-y-2">
