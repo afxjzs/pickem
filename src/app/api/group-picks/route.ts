@@ -20,7 +20,7 @@ async function batchRecalculateScores(
 	games: Game[]
 ): Promise<void> {
 	// Fetch all picks for this week in one query
-	const gameIds = games.map(g => g.id)
+	const gameIds = games.map((g) => g.id)
 	if (gameIds.length === 0) {
 		return
 	}
@@ -73,7 +73,7 @@ async function batchRecalculateScores(
 		const userId = String(user.id)
 		const userPicks = picksByUser.get(userId) || []
 		const scoreData = calculateWeeklyScore(userPicks, games)
-		
+
 		scoresToUpsert.push({
 			user_id: userId,
 			week,
@@ -95,7 +95,9 @@ async function batchRecalculateScores(
 		if (upsertError) {
 			console.error("Error batch upserting scores:", upsertError)
 		} else {
-			console.log(`✓ Batch recalculated scores for ${scoresToUpsert.length} users`)
+			console.log(
+				`✓ Batch recalculated scores for ${scoresToUpsert.length} users`
+			)
 		}
 	}
 }
@@ -129,8 +131,11 @@ async function syncGameOddsForWeek(
 
 	// Sync odds only for games that are not completed (scheduled, live, in progress)
 	// Completed games (status "final") don't need odds updates
-	const gamesToSync = games.filter(g => g.espn_id && g.status !== "final")
-	
+	const gamesToSync = games.filter(
+		(g: { espn_id: string | null; status: string }) =>
+			g.espn_id && g.status !== "final"
+	)
+
 	if (gamesToSync.length === 0) {
 		return // No games to sync
 	}
@@ -139,11 +144,15 @@ async function syncGameOddsForWeek(
 
 	// Sync odds in parallel with rate limiting (batch of 5 at a time)
 	const batchSize = 5
-	const updates: Array<{ gameId: string; spread?: number | null; over_under?: number | null }> = []
+	const updates: Array<{
+		gameId: string
+		spread?: number | null
+		over_under?: number | null
+	}> = []
 
 	for (let i = 0; i < gamesToSync.length; i += batchSize) {
 		const batch = gamesToSync.slice(i, i + batchSize)
-		
+
 		// Fetch odds for batch in parallel
 		const oddsPromises = batch.map(async (game) => {
 			const espnId = game.espn_id as string | undefined
@@ -167,7 +176,7 @@ async function syncGameOddsForWeek(
 		})
 
 		const results = await Promise.all(oddsPromises)
-		
+
 		// Collect updates
 		results.forEach((result) => {
 			if (result) {
@@ -188,12 +197,13 @@ async function syncGameOddsForWeek(
 	// Batch update all games in parallel
 	if (updates.length > 0) {
 		const updatePromises = updates.map(async (update) => {
-			const updateData: { spread?: number | null; over_under?: number | null } = {}
-			
+			const updateData: { spread?: number | null; over_under?: number | null } =
+				{}
+
 			if (update.spread !== null && update.spread !== undefined) {
 				updateData.spread = update.spread
 			}
-			
+
 			if (update.over_under !== null && update.over_under !== undefined) {
 				updateData.over_under = update.over_under
 			}
@@ -228,10 +238,12 @@ export interface UserPickData {
 }
 
 export interface GroupPicksResponse {
-	games: Array<Game & {
-		home_team_data: Team | null
-		away_team_data: Team | null
-	}>
+	games: Array<
+		Game & {
+			home_team_data: Team | null
+			away_team_data: Team | null
+		}
+	>
 	user_picks: UserPickData[]
 	week: number
 	season: string
@@ -242,7 +254,7 @@ export interface GroupPicksResponse {
  */
 function generateETag(data: GroupPicksResponse): string {
 	const dataString = JSON.stringify(data)
-	return createHash('md5').update(dataString).digest('hex')
+	return createHash("md5").update(dataString).digest("hex")
 }
 
 export async function GET(request: NextRequest) {
@@ -251,7 +263,7 @@ export async function GET(request: NextRequest) {
 		// This allows us to see all users' picks and display names
 		const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 		const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-		
+
 		if (!supabaseUrl || !supabaseServiceKey) {
 			return handleAPIError(
 				new Error("Missing Supabase configuration"),
@@ -266,67 +278,85 @@ export async function GET(request: NextRequest) {
 				persistSession: false,
 			},
 			db: {
-				schema: 'pickem'
-			}
+				schema: "pickem",
+			},
 		})
-		
+
 		// Get query parameters
 		const { searchParams } = new URL(request.url)
 		const season = searchParams.get("season") || "2025"
 		const week = searchParams.get("week")
 
 		if (!week) {
-			return handleAPIError(new Error("Week parameter required"), "fetch group picks", 400)
+			return handleAPIError(
+				new Error("Week parameter required"),
+				"fetch group picks",
+				400
+			)
 		}
 
 		const weekNumber = parseInt(week)
 		if (isNaN(weekNumber)) {
-			return handleAPIError(new Error("Invalid week parameter"), "fetch group picks", 400)
+			return handleAPIError(
+				new Error("Invalid week parameter"),
+				"fetch group picks",
+				400
+			)
 		}
 
 		// Check if this is the current week
 		const { espnAPI } = await import("@/lib/api/espn")
 		const seasonInfo = await espnAPI.getCurrentSeasonInfo()
-		const isCurrentWeek = seasonInfo.currentWeek === weekNumber && seasonInfo.season === parseInt(season)
-		
+		const isCurrentWeek =
+			seasonInfo.currentWeek === weekNumber &&
+			seasonInfo.season === parseInt(season)
+
 		// Get database state to check completeness
 		const { data: dbGames } = await supabase
 			.from("games")
 			.select("id, espn_id, status, start_time, home_score, away_score")
 			.eq("season", season)
 			.eq("week", weekNumber)
-		
+
 		// Check if week is complete (all games final with scores)
-		const isWeekComplete = dbGames && dbGames.length > 0 && dbGames.every(game => 
-			game.status === "final" && 
-			game.home_score !== null && 
-			game.away_score !== null
-		)
-		
+		const isWeekComplete =
+			dbGames &&
+			dbGames.length > 0 &&
+			dbGames.every(
+				(game) =>
+					game.status === "final" &&
+					game.home_score !== null &&
+					game.away_score !== null
+			)
+
 		// Check for missing data
-		const hasMissingData = dbGames && dbGames.length > 0 && dbGames.some(game => {
-			// Game is missing scores
-			if (game.home_score === null || game.away_score === null) {
-				return true
-			}
-			// Game should be final but isn't
-			if (game.status !== "final") {
-				const now = new Date()
-				const gameStartTime = new Date(game.start_time)
-				const hoursSinceStart = (now.getTime() - gameStartTime.getTime()) / (1000 * 60 * 60)
-				if (hoursSinceStart > 4) {
+		const hasMissingData =
+			dbGames &&
+			dbGames.length > 0 &&
+			dbGames.some((game) => {
+				// Game is missing scores
+				if (game.home_score === null || game.away_score === null) {
 					return true
 				}
-			}
-			return false
-		})
-		
-		// SIMPLE RULE: 
+				// Game should be final but isn't
+				if (game.status !== "final") {
+					const now = new Date()
+					const gameStartTime = new Date(game.start_time)
+					const hoursSinceStart =
+						(now.getTime() - gameStartTime.getTime()) / (1000 * 60 * 60)
+					if (hoursSinceStart > 4) {
+						return true
+					}
+				}
+				return false
+			})
+
+		// SIMPLE RULE:
 		// - Always sync current week (until noon Tuesday ET when it becomes next week)
 		// - Only sync past weeks if they're incomplete (missing data)
 		// - Don't sync past weeks that are complete
 		const shouldSync = isCurrentWeek || (hasMissingData && !isWeekComplete)
-		
+
 		// Log the decision
 		console.log(`[GROUP-PICKS] Week ${weekNumber} sync decision:`, {
 			isCurrentWeek,
@@ -334,40 +364,48 @@ export async function GET(request: NextRequest) {
 			hasMissingData,
 			shouldSync,
 			dbGamesCount: dbGames?.length || 0,
-			currentWeekFromAPI: seasonInfo.currentWeek
+			currentWeekFromAPI: seasonInfo.currentWeek,
 		})
-		
+
 		if (shouldSync) {
 			try {
 				const { espnAPI: espn } = await import("@/lib/api/espn")
 				const { normalizeGames } = await import("@/lib/api/normalizers")
-				
+
 				// Force fetch from ESPN (bypass cache)
 				const syncReasons = []
-				if (isCurrentWeek) syncReasons.push('current week')
-				if (hasMissingData) syncReasons.push('missing data detected')
-				if (!isWeekComplete) syncReasons.push('week incomplete')
-				
-				console.log(`🔄 SYNCING week ${weekNumber} - REASONS: ${syncReasons.join(', ')}`)
+				if (isCurrentWeek) syncReasons.push("current week")
+				if (hasMissingData) syncReasons.push("missing data detected")
+				if (!isWeekComplete) syncReasons.push("week incomplete")
+
+				console.log(
+					`🔄 SYNCING week ${weekNumber} - REASONS: ${syncReasons.join(", ")}`
+				)
 				const espnGames = await espn.getSchedule(parseInt(season), weekNumber)
 				const normalizedGames = normalizeGames(espnGames)
-				
+
 				// Batch update all games in one operation
-				const { createClient: createSupabaseClient } = await import("@supabase/supabase-js")
+				const { createClient: createSupabaseClient } = await import(
+					"@supabase/supabase-js"
+				)
 				const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 				const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-				
+
 				if (supabaseUrl && supabaseServiceKey) {
-					const serviceSupabase = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
-						auth: {
-							autoRefreshToken: false,
-							persistSession: false,
-						},
-						db: {
-							schema: 'pickem'
+					const serviceSupabase = createSupabaseClient(
+						supabaseUrl,
+						supabaseServiceKey,
+						{
+							auth: {
+								autoRefreshToken: false,
+								persistSession: false,
+							},
+							db: {
+								schema: "pickem",
+							},
 						}
-					})
-					
+					)
+
 					// Fetch existing games to get IDs
 					const { data: existingGames } = await serviceSupabase
 						.from("games")
@@ -385,8 +423,8 @@ export async function GET(request: NextRequest) {
 
 						// Prepare batch updates - MUST include ALL required fields
 						const updates = normalizedGames
-							.filter(game => gameMap.has(game.espn_id))
-							.map(game => ({
+							.filter((game) => gameMap.has(game.espn_id))
+							.map((game) => ({
 								id: gameMap.get(game.espn_id)!,
 								season: season, // CRITICAL: Must include season
 								week: weekNumber, // CRITICAL: Must include week
@@ -400,9 +438,10 @@ export async function GET(request: NextRequest) {
 
 						// Check if any games are final (for score recalculation)
 						const hasFinalGames = normalizedGames.some(
-							g => g.status === "final" && 
-							g.home_score !== null && 
-							g.away_score !== null
+							(g) =>
+								g.status === "final" &&
+								g.home_score !== null &&
+								g.away_score !== null
 						)
 
 						// Batch update all games
@@ -417,8 +456,10 @@ export async function GET(request: NextRequest) {
 							if (updateError) {
 								console.error(`❌ Error batch updating games:`, updateError)
 							} else {
-								console.log(`✅ Batch updated ${updates.length} games with latest ESPN data`)
-								
+								console.log(
+									`✅ Batch updated ${updates.length} games with latest ESPN data`
+								)
+
 								// Verify completeness after sync if week should be complete
 								if (!isCurrentWeek && isWeekComplete) {
 									const { data: verifyGames } = await serviceSupabase
@@ -426,19 +467,31 @@ export async function GET(request: NextRequest) {
 										.select("id, status, home_score, away_score")
 										.eq("season", season)
 										.eq("week", weekNumber)
-									
+
 									if (verifyGames) {
-										const incomplete = verifyGames.filter(game => 
-											game.status !== "final" || 
-											game.home_score === null || 
-											game.away_score === null
+										const incomplete = verifyGames.filter(
+											(game) =>
+												game.status !== "final" ||
+												game.home_score === null ||
+												game.away_score === null
 										)
-										
+
 										if (incomplete.length === 0) {
-											console.log(`✅ Week ${weekNumber} is now COMPLETE - all games final with scores`)
+											console.log(
+												`✅ Week ${weekNumber} is now COMPLETE - all games final with scores`
+											)
 										} else {
-											console.error(`❌ Week ${weekNumber} still has ${incomplete.length} incomplete games after sync!`)
-											console.error(`Incomplete games:`, incomplete.map(g => ({ id: g.id, status: g.status, scores: `${g.home_score}-${g.away_score}` })))
+											console.error(
+												`❌ Week ${weekNumber} still has ${incomplete.length} incomplete games after sync!`
+											)
+											console.error(
+												`Incomplete games:`,
+												incomplete.map((g) => ({
+													id: g.id,
+													status: g.status,
+													scores: `${g.home_score}-${g.away_score}`,
+												}))
+											)
 										}
 									}
 								}
@@ -461,29 +514,35 @@ export async function GET(request: NextRequest) {
 									season,
 									updatedGames as Game[]
 								)
-								console.log(`✅ Score recalculation complete for week ${weekNumber}`)
+								console.log(
+									`✅ Score recalculation complete for week ${weekNumber}`
+								)
 							}
 						}
-						
+
 						// Set last sync time after successful sync (use service role client)
 						const timestamp = new Date().toISOString()
 						const key = `last_games_sync_${season}_${weekNumber}`
-						const { error: timestampError } = await serviceSupabase.from("app_config").upsert(
-							{
-								key,
-								value: timestamp,
-								description: `Last sync time for season ${season}, week ${weekNumber}`,
-							},
-							{ onConflict: "key" }
-						)
-						
+						const { error: timestampError } = await serviceSupabase
+							.from("app_config")
+							.upsert(
+								{
+									key,
+									value: timestamp,
+									description: `Last sync time for season ${season}, week ${weekNumber}`,
+								},
+								{ onConflict: "key" }
+							)
+
 						if (timestampError) {
 							console.error(`Error setting sync timestamp:`, timestampError)
 						} else {
 							console.log(`✅ Sync timestamp updated for week ${weekNumber}`)
 						}
 					} else {
-						console.warn(`⚠️  No existing games found in database for week ${weekNumber}`)
+						console.warn(
+							`⚠️  No existing games found in database for week ${weekNumber}`
+						)
 					}
 				}
 			} catch (error) {
@@ -492,17 +551,25 @@ export async function GET(request: NextRequest) {
 			}
 		} else {
 			// Only skip if we're CERTAIN everything is complete
-			const allComplete = dbGames && dbGames.length > 0 && dbGames.every(game => 
-				game.status === "final" && 
-				game.home_score !== null && 
-				game.away_score !== null
-			)
-			
+			const allComplete =
+				dbGames &&
+				dbGames.length > 0 &&
+				dbGames.every(
+					(game) =>
+						game.status === "final" &&
+						game.home_score !== null &&
+						game.away_score !== null
+				)
+
 			if (allComplete) {
-				console.log(`⏭️  Skipping sync for week ${weekNumber} - all games are final with scores`)
+				console.log(
+					`⏭️  Skipping sync for week ${weekNumber} - all games are final with scores`
+				)
 			} else {
 				// This shouldn't happen, but if it does, log it
-				console.warn(`⚠️  Skipping sync but data may be incomplete for week ${weekNumber}`)
+				console.warn(
+					`⚠️  Skipping sync but data may be incomplete for week ${weekNumber}`
+				)
 			}
 		}
 
@@ -515,10 +582,7 @@ export async function GET(request: NextRequest) {
 				.eq("week", weekNumber)
 				.order("start_time", { ascending: true })
 				.order("home_team", { ascending: true }),
-			supabase
-				.from("teams")
-				.select("*")
-				.eq("active", true),
+			supabase.from("teams").select("*").eq("active", true),
 			supabase
 				.from("users")
 				.select("id, display_name")
@@ -539,29 +603,42 @@ export async function GET(request: NextRequest) {
 		}
 
 		// Check if week is complete (all games are final)
-		const allGamesFinal = games && games.length > 0 && games.every(game => game.status === "final")
-		
+		const allGamesFinal =
+			games &&
+			games.length > 0 &&
+			games.every((game) => game.status === "final")
+
 		// For current week, always sync odds (they can change)
 		// For past weeks, skip odds syncing (too slow, data should already be there)
-		if (isCurrentWeek && games && games.some(game => game.espn_id)) {
+		if (isCurrentWeek && games && games.some((game) => game.espn_id)) {
 			// Sync odds in background (don't wait for it)
 			// Use service role client to ensure we can update games
 			const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 			const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-			
+
 			if (supabaseUrl && supabaseServiceKey) {
-				const { createClient: createSupabaseClient } = await import("@supabase/supabase-js")
-				const serviceSupabase = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
-					auth: {
-						autoRefreshToken: false,
-						persistSession: false,
-					},
-					db: {
-						schema: 'pickem'
+				const { createClient: createSupabaseClient } = await import(
+					"@supabase/supabase-js"
+				)
+				const serviceSupabase = createSupabaseClient(
+					supabaseUrl,
+					supabaseServiceKey,
+					{
+						auth: {
+							autoRefreshToken: false,
+							persistSession: false,
+						},
+						db: {
+							schema: "pickem",
+						},
 					}
-				})
-				
-				syncGameOddsForWeek(serviceSupabase, parseInt(season), weekNumber).catch(error => {
+				)
+
+				syncGameOddsForWeek(
+					serviceSupabase,
+					parseInt(season),
+					weekNumber
+				).catch((error) => {
 					console.error("Error syncing odds (non-fatal):", error)
 				})
 			}
@@ -569,41 +646,45 @@ export async function GET(request: NextRequest) {
 
 		// Create team map
 		const teamMap = new Map<string, Team>()
-		teams?.forEach(team => {
+		teams?.forEach((team) => {
 			teamMap.set(team.abbreviation, team)
 		})
 
 		// Enrich games with team data
-		const enrichedGames = (games || []).map(game => ({
+		const enrichedGames = (games || []).map((game) => ({
 			...game,
 			home_team_data: teamMap.get(game.home_team) || null,
 			away_team_data: teamMap.get(game.away_team) || null,
 		}))
 
 		// Fetch picks and scores in parallel
-		const gameIds = enrichedGames.map(g => g.id)
+		const gameIds = enrichedGames.map((g) => g.id)
 		const [picksResult, scoresResult] = await Promise.all([
 			gameIds.length > 0
 				? supabase
-					.from("picks")
-					.select(`
+						.from("picks")
+						.select(
+							`
 						*,
 						users!inner(
 							id,
 							display_name
 						)
-					`)
-					.in("game_id", gameIds)
+					`
+						)
+						.in("game_id", gameIds)
 				: Promise.resolve({ data: [], error: null }),
 			supabase
 				.from("scores")
-				.select(`
+				.select(
+					`
 					*,
 					users!inner(
 						id,
 						display_name
 					)
-				`)
+				`
+				)
 				.eq("season", season)
 				.eq("week", weekNumber)
 				.order("points", { ascending: false }),
@@ -621,17 +702,20 @@ export async function GET(request: NextRequest) {
 		}
 
 		// Build user picks map - start with ALL users
-		const userPicksMap = new Map<string, {
-			user_id: string
-			display_name: string
-			picks: Array<{
-				game_id: string
-				picked_team: string
-				confidence_points: number
-			}>
-			weekly_points: number
-			weekly_rank: number
-		}>()
+		const userPicksMap = new Map<
+			string,
+			{
+				user_id: string
+				display_name: string
+				picks: Array<{
+					game_id: string
+					picked_team: string
+					confidence_points: number
+				}>
+				weekly_points: number
+				weekly_rank: number
+			}
+		>()
 
 		// Initialize all users with empty picks
 		allUsers?.forEach((user) => {
@@ -660,11 +744,13 @@ export async function GET(request: NextRequest) {
 				userPicksMap.set(userId, {
 					user_id: userId,
 					display_name: pick.users?.display_name || "Unknown User",
-					picks: [{
-						game_id: pick.game_id,
-						picked_team: pick.picked_team,
-						confidence_points: pick.confidence_points,
-					}],
+					picks: [
+						{
+							game_id: pick.game_id,
+							picked_team: pick.picked_team,
+							confidence_points: pick.confidence_points,
+						},
+					],
 					weekly_points: 0,
 					weekly_rank: 0,
 				})
@@ -681,13 +767,12 @@ export async function GET(request: NextRequest) {
 		})
 
 		// Convert to array and sort by weekly rank (or points if no rank)
-		const userPicksArray = Array.from(userPicksMap.values())
-			.sort((a, b) => {
-				if (a.weekly_rank > 0 && b.weekly_rank > 0) {
-					return a.weekly_rank - b.weekly_rank
-				}
-				return b.weekly_points - a.weekly_points
-			})
+		const userPicksArray = Array.from(userPicksMap.values()).sort((a, b) => {
+			if (a.weekly_rank > 0 && b.weekly_rank > 0) {
+				return a.weekly_rank - b.weekly_rank
+			}
+			return b.weekly_points - a.weekly_points
+		})
 
 		const responseData: GroupPicksResponse = {
 			games: enrichedGames,
@@ -705,10 +790,10 @@ export async function GET(request: NextRequest) {
 			return new Response(null, {
 				status: 304,
 				headers: {
-					'ETag': `"${etag}"`,
-					'Cache-Control': allGamesFinal 
-						? 'public, max-age=31536000, immutable' 
-						: 'public, max-age=300',
+					ETag: `"${etag}"`,
+					"Cache-Control": allGamesFinal
+						? "public, max-age=31536000, immutable"
+						: "public, max-age=300",
 				},
 			})
 		}
@@ -716,20 +801,23 @@ export async function GET(request: NextRequest) {
 		// Add caching headers for completed weeks
 		// If all games are final, cache for 1 year (data won't change)
 		// Otherwise, cache for 5 minutes (data might still be updating)
-		const cacheControl = allGamesFinal 
-			? 'public, max-age=31536000, immutable' 
-			: 'public, max-age=300'
+		const cacheControl = allGamesFinal
+			? "public, max-age=31536000, immutable"
+			: "public, max-age=300"
 
-		return createSuccessResponse(responseData, {
-			count: userPicksArray.length,
-			type: "group_picks"
-		}, {
-			headers: {
-				'Cache-Control': cacheControl,
-				'ETag': `"${etag}"`,
+		return createSuccessResponse(
+			responseData,
+			{
+				count: userPicksArray.length,
+				type: "group_picks",
 			},
-		})
-
+			{
+				headers: {
+					"Cache-Control": cacheControl,
+					ETag: `"${etag}"`,
+				},
+			}
+		)
 	} catch (error) {
 		return handleAPIError(error, "fetch group picks")
 	}
