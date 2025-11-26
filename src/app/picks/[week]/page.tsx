@@ -40,6 +40,15 @@ function PicksPageContent() {
 	const [debugInfo, setDebugInfo] = useState<any>(null)
 	const [checkingOnboarding, setCheckingOnboarding] = useState(true)
 
+	// Cache for games and picks by week (similar to group-picks)
+	const [gamesCache, setGamesCache] = useState<Map<number, GameWithTeams[]>>(
+		new Map()
+	)
+	const [picksCache, setPicksCache] = useState<Map<number, UserPick[]>>(
+		new Map()
+	)
+	const [teamsLoaded, setTeamsLoaded] = useState(false) // Track if teams have been loaded
+
 	// Available confidence points (1-16)
 	const confidencePoints = Array.from({ length: 16 }, (_, i) => i + 1)
 
@@ -182,18 +191,62 @@ function PicksPageContent() {
 		router.push(`/picks/${newWeek}`, { scroll: false })
 	}
 
+	// Load teams once (they don't change)
+	useEffect(() => {
+		if (!teamsLoaded) {
+			fetchTeams()
+			setTeamsLoaded(true)
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [])
+
 	useEffect(() => {
 		// Don't fetch games until week is initialized and we have a valid week
 		if (user && weekInitialized && week !== null) {
-			// Clear games and picks when week/season changes to prevent showing stale data
+			// Check cache first
+			const cachedGames = gamesCache.get(week)
+			const cachedPicks = picksCache.get(week)
+
+			// Check if week is completed (all games final with scores)
+			const isWeekCompleted =
+				cachedGames?.every(
+					(g) =>
+						g.status === "final" &&
+						g.home_score !== null &&
+						g.away_score !== null
+				) ?? false
+
+			const isCurrentWeek = currentWeek !== null && week === currentWeek
+
+			if (cachedGames && cachedPicks) {
+				// For completed weeks, show cached data immediately (no refresh needed)
+				if (isWeekCompleted) {
+					setGames(cachedGames)
+					setUserPicks(cachedPicks)
+					setLoading(false)
+					return // Don't fetch - completed weeks don't change
+				}
+
+				// For current week, show cached data immediately but fetch fresh in background
+				if (isCurrentWeek) {
+					setGames(cachedGames)
+					setUserPicks(cachedPicks)
+					setLoading(false)
+					// Fetch fresh data in background
+					fetchGamesInBackground()
+					fetchUserPicksInBackground()
+					return
+				}
+			}
+
+			// No cache or incomplete cache - fetch fresh
 			setGames([])
 			setUserPicks([])
-			// Fetch games first, then picks (picks need games to match against)
 			fetchGames()
-			fetchTeams()
+			fetchUserPicks()
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [user, season, week, weekInitialized])
+	}, [user, season, week, weekInitialized, currentWeek])
 
 	// Filter games to only show current week to prevent race condition
 	const filteredGames =
@@ -227,10 +280,68 @@ function PicksPageContent() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [user, season, week, games])
 
+	const fetchGamesInBackground = async () => {
+		if (week === null) return
+
+		try {
+			const isCurrentWeek = currentWeek !== null && week === currentWeek
+			// For current week, use cache-busting. For past weeks, use cache
+			const url = isCurrentWeek
+				? `/api/games?season=${season}&week=${week}&_t=${Date.now()}`
+				: `/api/games?season=${season}&week=${week}`
+
+			const fetchOptions: RequestInit = isCurrentWeek
+				? { cache: "no-store" }
+				: { cache: "default" }
+
+			const response = await fetch(url, fetchOptions)
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`)
+			}
+			const data = await response.json()
+			if (data.success && Array.isArray(data.data)) {
+				const validGames = data.data
+					.filter((game: GameWithTeams) => {
+						return (
+							game.id &&
+							game.id !== null &&
+							game.id !== undefined &&
+							game.id !== ""
+						)
+					})
+					.map((game: GameWithTeams) => {
+						return { ...game, id: String(game.id) }
+					})
+
+				setGames(validGames)
+				// Update cache
+				setGamesCache((prev) => {
+					const newCache = new Map(prev)
+					newCache.set(week, validGames)
+					return newCache
+				})
+			}
+		} catch (error) {
+			console.error("Error fetching games in background:", error)
+		}
+	}
+
 	const fetchGames = async () => {
+		if (week === null) return
+
 		try {
 			setLoading(true)
-			const response = await fetch(`/api/games?season=${season}&week=${week}`)
+			const isCurrentWeek = currentWeek !== null && week === currentWeek
+			// For current week, use cache-busting. For past weeks, use cache
+			const url = isCurrentWeek
+				? `/api/games?season=${season}&week=${week}&_t=${Date.now()}`
+				: `/api/games?season=${season}&week=${week}`
+
+			const fetchOptions: RequestInit = isCurrentWeek
+				? { cache: "no-store" }
+				: { cache: "default" }
+
+			const response = await fetch(url, fetchOptions)
 			if (!response.ok) {
 				throw new Error(`HTTP error! status: ${response.status}`)
 			}
@@ -254,6 +365,12 @@ function PicksPageContent() {
 					})
 
 				setGames(validGames)
+				// Update cache
+				setGamesCache((prev) => {
+					const newCache = new Map(prev)
+					newCache.set(week, validGames)
+					return newCache
+				})
 			} else {
 				console.warn("Games API returned unsuccessful response:", data)
 				setGames([])
@@ -278,11 +395,67 @@ function PicksPageContent() {
 		}
 	}
 
-	const fetchUserPicks = async () => {
+	const fetchUserPicksInBackground = async () => {
+		if (week === null) return
+
 		try {
-			const response = await fetch(`/api/picks?season=${season}&week=${week}`, {
-				credentials: "include",
-			})
+			const isCurrentWeek = currentWeek !== null && week === currentWeek
+			const url = isCurrentWeek
+				? `/api/picks?season=${season}&week=${week}&_t=${Date.now()}`
+				: `/api/picks?season=${season}&week=${week}`
+
+			const fetchOptions: RequestInit = isCurrentWeek
+				? { cache: "no-store", credentials: "include" }
+				: { cache: "default", credentials: "include" }
+
+			const response = await fetch(url, fetchOptions)
+			const data = await response.json()
+			if (data.success) {
+				const picks: UserPick[] = data.data.map((pick: Pick) => ({
+					gameId: String(pick.game_id),
+					pickedTeam: pick.picked_team,
+					confidencePoints: pick.confidence_points,
+					saving: false,
+					saved: true,
+					justCleared: false,
+					clearedPoint: undefined,
+				}))
+
+				const currentWeekGameIds = new Set(
+					games.map((g) => String(g.id).trim())
+				)
+
+				const filteredPicks = picks.filter((pick) =>
+					currentWeekGameIds.has(String(pick.gameId).trim())
+				)
+
+				setUserPicks(filteredPicks)
+				// Update cache
+				setPicksCache((prev) => {
+					const newCache = new Map(prev)
+					newCache.set(week, filteredPicks)
+					return newCache
+				})
+			}
+		} catch (error) {
+			console.error("Error fetching user picks in background:", error)
+		}
+	}
+
+	const fetchUserPicks = async () => {
+		if (week === null) return
+
+		try {
+			const isCurrentWeek = currentWeek !== null && week === currentWeek
+			const url = isCurrentWeek
+				? `/api/picks?season=${season}&week=${week}&_t=${Date.now()}`
+				: `/api/picks?season=${season}&week=${week}`
+
+			const fetchOptions: RequestInit = isCurrentWeek
+				? { cache: "no-store", credentials: "include" }
+				: { cache: "default", credentials: "include" }
+
+			const response = await fetch(url, fetchOptions)
 			const data = await response.json()
 			if (data.success) {
 				// Convert picks to UserPick format
@@ -310,6 +483,12 @@ function PicksPageContent() {
 				// Replace picks entirely - API already filters by week, so we don't need to merge
 				// This ensures we don't show picks from other weeks
 				setUserPicks(filteredPicks)
+				// Update cache
+				setPicksCache((prev) => {
+					const newCache = new Map(prev)
+					newCache.set(week, filteredPicks)
+					return newCache
+				})
 			}
 		} catch (error) {
 			console.error("Error fetching user picks:", error)
@@ -446,13 +625,22 @@ function PicksPageContent() {
 					} else {
 						console.log("[savePick] Pick updated successfully")
 						// Set saved state (no message - checkmark will show)
-						setUserPicks((prev) =>
-							prev.map((p) =>
+						setUserPicks((prev) => {
+							const updated = prev.map((p) =>
 								String(p.gameId).trim() === String(pick.gameId).trim()
 									? { ...p, saving: false, saved: true }
 									: p
 							)
-						)
+							// Update cache
+							if (week !== null) {
+								setPicksCache((prevCache) => {
+									const newCache = new Map(prevCache)
+									newCache.set(week, updated)
+									return newCache
+								})
+							}
+							return updated
+						})
 					}
 				} else {
 					console.error("[savePick] Failed to save pick:", data.message)
@@ -472,13 +660,22 @@ function PicksPageContent() {
 			} else {
 				console.log("[savePick] Pick saved successfully")
 				// Set saved state (no message - checkmark will show)
-				setUserPicks((prev) =>
-					prev.map((p) =>
+				setUserPicks((prev) => {
+					const updated = prev.map((p) =>
 						String(p.gameId).trim() === String(pick.gameId).trim()
 							? { ...p, saving: false, saved: true }
 							: p
 					)
-				)
+					// Update cache
+					if (week !== null) {
+						setPicksCache((prevCache) => {
+							const newCache = new Map(prevCache)
+							newCache.set(week, updated)
+							return newCache
+						})
+					}
+					return updated
+				})
 			}
 		} catch (error) {
 			console.error("[savePick] Error saving pick:", error)
@@ -795,11 +992,8 @@ function PicksPageContent() {
 		)
 	}
 
-	// Build week options - only show weeks up to current week
-	const weekOptions =
-		currentWeek !== null
-			? Array.from({ length: currentWeek }, (_, i) => i + 1)
-			: Array.from({ length: 18 }, (_, i) => i + 1)
+	// Build week options - show all 18 weeks
+	const weekOptions = Array.from({ length: 18 }, (_, i) => i + 1)
 
 	return (
 		<div className="min-h-screen bg-gray-50">
@@ -869,19 +1063,12 @@ function PicksPageContent() {
 								}}
 								className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm md:text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
 							>
-								{currentWeek !== null && (
-									<option value={currentWeek}>
-										Week {currentWeek} (Current)
+								{weekOptions.map((w) => (
+									<option key={w} value={w}>
+										Week {w}
+										{w === currentWeek ? " (Current)" : ""}
 									</option>
-								)}
-								{weekOptions.map(
-									(w) =>
-										w !== currentWeek && (
-											<option key={w} value={w}>
-												Week {w}
-											</option>
-										)
-								)}
+								))}
 							</select>
 						</div>
 					</div>
