@@ -444,12 +444,15 @@ class DataSyncService {
 				throw new Error("Missing Supabase configuration for service role")
 			}
 
-			const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-				auth: {
-					autoRefreshToken: false,
-					persistSession: false,
-				},
-			})
+		const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+			auth: {
+				autoRefreshToken: false,
+				persistSession: false,
+			},
+			db: {
+				schema: 'pickem'
+			}
+		})
 			
 			// Fetch games from database for this week
 			let query = supabase

@@ -20,6 +20,7 @@
 		"seed:leaderboard": "tsx scripts/seed-leaderboard.ts",
 		"seed:leaderboard:calc": "tsx scripts/seed-leaderboard.ts calculate-only",
 		"add:week-picks": "tsx scripts/add-week-picks.ts",
+		"populate_picks": "tsx scripts/populate-picks.ts",
 		"sync:games": "tsx scripts/sync-games.ts",
 		"sync:odds": "tsx scripts/sync-odds.ts",
 		"update-seed": "node scripts/update-seed.js"
@@ -27,8 +28,10 @@
 	"dependencies": {
 		"@supabase/ssr": "^0.7.0",
 		"@supabase/supabase-js": "^2.39.0",
+		"chart.js": "^4.5.1",
 		"next": "^16.0.3",
 		"react": "19.1.0",
+		"react-chartjs-2": "^5.3.1",
 		"react-dom": "19.1.0",
 		"stripe": "^14.12.0",
 		"zod": "^3.22.4"

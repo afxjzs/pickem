@@ -5,12 +5,26 @@ import { useAuth } from "@/lib/contexts/AuthContext"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import type { SeasonStanding } from "@/lib/types/database"
+import type { WeeklyPerformanceUser } from "@/app/api/leaderboard/route"
+import NextGameCountdown from "@/components/dashboard/NextGameCountdown"
+import PicksStatusCard from "@/components/dashboard/PicksStatusCard"
+import CumulativePointsChart from "@/components/dashboard/CumulativePointsChart"
+import WeeklyPointsChart from "@/components/dashboard/WeeklyPointsChart"
+import UserMetrics from "@/components/dashboard/UserMetrics"
+import PerformanceInsights from "@/components/dashboard/PerformanceInsights"
+import LeaderboardPreview from "@/components/dashboard/LeaderboardPreview"
 
 export default function DashboardPage() {
 	const { user, loading } = useAuth()
 	const router = useRouter()
 	const [userStats, setUserStats] = useState<SeasonStanding | null>(null)
+	const [standings, setStandings] = useState<SeasonStanding[]>([])
+	const [weeklyData, setWeeklyData] = useState<WeeklyPerformanceUser[] | null>(
+		null
+	)
+	const [currentWeek, setCurrentWeek] = useState<number | null>(null)
 	const [loadingStats, setLoadingStats] = useState(true)
+	const [loadingWeekly, setLoadingWeekly] = useState(true)
 	const [checkingOnboarding, setCheckingOnboarding] = useState(true)
 	const [season] = useState("2025")
 
@@ -27,16 +41,26 @@ export default function DashboardPage() {
 				try {
 					const response = await fetch("/api/users/me")
 					const data = await response.json()
-					console.log("[Dashboard] /api/users/me response:", { success: data.success, hasData: !!data.data, username: data.data?.username, error: data.error })
+					console.log("[Dashboard] /api/users/me response:", {
+						success: data.success,
+						hasData: !!data.data,
+						username: data.data?.username,
+						error: data.error,
+					})
 					if (data.success && data.data) {
 						if (!data.data.username) {
-							console.log("[Dashboard] User missing username, redirecting to onboarding")
+							console.log(
+								"[Dashboard] User missing username, redirecting to onboarding"
+							)
 							router.push("/onboarding")
 							return
 						}
 					} else {
 						// User doesn't exist in users table, redirect to onboarding
-						console.log("[Dashboard] User not found or API error:", data.error || "Unknown error")
+						console.log(
+							"[Dashboard] User not found or API error:",
+							data.error || "Unknown error"
+						)
 						router.push("/onboarding")
 						return
 					}
@@ -52,9 +76,23 @@ export default function DashboardPage() {
 
 	useEffect(() => {
 		if (user) {
+			fetchCurrentWeek()
 			fetchUserStats()
+			fetchWeeklyData()
 		}
 	}, [user, season])
+
+	const fetchCurrentWeek = async () => {
+		try {
+			const response = await fetch("/api/season")
+			const data = await response.json()
+			if (data.success && data.data?.currentWeek) {
+				setCurrentWeek(data.data.currentWeek)
+			}
+		} catch (error) {
+			console.error("Error fetching current week:", error)
+		}
+	}
 
 	const fetchUserStats = async () => {
 		try {
@@ -62,14 +100,32 @@ export default function DashboardPage() {
 			const response = await fetch(`/api/scores?season=${season}&type=season`)
 			const data = await response.json()
 			if (data.success && data.data) {
+				setStandings(data.data)
 				// Find the current user's stats
-				const userStanding = data.data.find((standing: SeasonStanding) => standing.user_id === user?.id)
+				const userStanding = data.data.find(
+					(standing: SeasonStanding) => standing.user_id === user?.id
+				)
 				setUserStats(userStanding || null)
 			}
 		} catch (error) {
 			console.error("Error fetching user stats:", error)
 		} finally {
 			setLoadingStats(false)
+		}
+	}
+
+	const fetchWeeklyData = async () => {
+		try {
+			setLoadingWeekly(true)
+			const response = await fetch(`/api/leaderboard?season=${season}`)
+			const data = await response.json()
+			if (data.success && data.data?.users) {
+				setWeeklyData(data.data.users)
+			}
+		} catch (error) {
+			console.error("Error fetching weekly data:", error)
+		} finally {
+			setLoadingWeekly(false)
 		}
 	}
 
@@ -89,132 +145,94 @@ export default function DashboardPage() {
 		<div className="min-h-screen bg-gray-50">
 			<main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
 				<div className="px-4 py-6 sm:px-0">
-					<div className="grid md:grid-cols-3 gap-8 mb-8">
-						{/* NFL Data Card */}
-						<div className="bg-white rounded-lg shadow p-6 border border-gray-200">
-							<div className="text-center">
-								<h3 className="text-xl font-semibold text-gray-900 mb-3">
-									NFL Data
-								</h3>
-								<p className="text-gray-600 mb-4">
-									Browse teams, games, standings, and season information
-								</p>
-								<Link
-									href="/data"
-									className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-								>
-									View Data
-								</Link>
-							</div>
+					{/* Status Cards - Top Section */}
+					{currentWeek !== null && (
+						<div className="grid md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
+							<PicksStatusCard currentWeek={currentWeek} season={season} />
+							<NextGameCountdown currentWeek={currentWeek} season={season} />
 						</div>
+					)}
 
-						{/* My Picks Card */}
-						<div className="bg-white rounded-lg shadow p-6 border border-gray-200">
-							<div className="text-center">
-								<h3 className="text-xl font-semibold text-gray-900 mb-3">
-									My Picks
-								</h3>
-								<p className="text-gray-600 mb-4">
-									Make weekly NFL picks with confidence points
-								</p>
-								<Link
-									href="/picks"
-									className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-								>
-									Make Picks
-								</Link>
-							</div>
+					{/* Charts Section */}
+					{weeklyData && currentWeek !== null && weeklyData.length > 0 && (
+						<div className="space-y-6 md:space-y-8 mb-6 md:mb-8">
+							<CumulativePointsChart
+								data={weeklyData}
+								currentUserId={user?.id}
+								currentWeek={currentWeek}
+							/>
+							<WeeklyPointsChart
+								data={weeklyData}
+								currentUserId={user?.id}
+								currentWeek={currentWeek}
+							/>
 						</div>
+					)}
 
-						{/* Leaderboard Card */}
-						<div className="bg-white rounded-lg shadow p-6 border border-gray-200">
-							<div className="text-center">
-								<h3 className="text-xl font-semibold text-gray-900 mb-3">
-									Leaderboard
-								</h3>
-								<p className="text-gray-600 mb-4">
-									View standings and track your performance
-								</p>
-								<Link
-									href="/leaderboard"
-									className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors inline-block"
-								>
-									View Leaderboard
-								</Link>
-							</div>
-						</div>
+					{/* Metrics and Insights Section */}
+					<div className="grid md:grid-cols-2 gap-6 md:gap-8 mb-6 md:mb-8">
+						<UserMetrics
+							userStats={userStats}
+							weeklyData={weeklyData}
+							currentUserId={user?.id}
+						/>
+						{weeklyData && (
+							<PerformanceInsights
+								weeklyData={weeklyData}
+								currentUserId={user?.id}
+							/>
+						)}
 					</div>
 
-					{/* User Stats */}
-					<div className="bg-white rounded-lg shadow p-6 border border-gray-200 mb-8">
-						<h2 className="text-2xl font-semibold text-gray-900 mb-4">
-							Your Stats - Season {season}
-						</h2>
-						{loadingStats ? (
-							<div className="text-center py-8">
-								<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-								<p className="mt-4 text-gray-600">Loading stats...</p>
+					{/* Leaderboard Preview */}
+					{standings.length > 0 && (
+						<div className="mb-6 md:mb-8">
+							<LeaderboardPreview
+								standings={standings}
+								currentUserId={user?.id}
+							/>
+						</div>
+					)}
+
+					{/* Quick Links */}
+					<div className="grid md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
+						<Link
+							href="/picks/current"
+							className="bg-white rounded-lg shadow p-6 border border-gray-200 hover:shadow-md transition-shadow"
+						>
+							<div className="text-center">
+								<h3 className="text-lg font-semibold text-gray-900 mb-2">
+									My Picks
+								</h3>
+								<p className="text-sm text-gray-600">
+									Make weekly NFL picks with confidence points
+								</p>
 							</div>
-						) : userStats ? (
-							<div>
-								<div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-									<div className="text-center p-4 bg-blue-50 rounded-lg">
-										<div className="text-4xl font-bold text-blue-600 mb-2">{userStats.rank}</div>
-										<div className="text-gray-700 font-medium">Overall Rank</div>
-										<div className="text-sm text-gray-500 mt-1">Out of all players</div>
-									</div>
-									<div className="text-center p-4 bg-purple-50 rounded-lg">
-										<div className="text-4xl font-bold text-purple-600 mb-2">{userStats.total_points}</div>
-										<div className="text-gray-700 font-medium">Total Points</div>
-										<div className="text-sm text-gray-500 mt-1">Season total</div>
-									</div>
-									<div className="text-center p-4 bg-green-50 rounded-lg">
-										<div className="text-4xl font-bold text-green-600 mb-2">
-											{userStats.correct_picks}/{userStats.total_picks}
-										</div>
-										<div className="text-gray-700 font-medium">Correct Picks</div>
-										<div className="text-sm text-gray-500 mt-1">
-											{userStats.correct_picks_percentage.toFixed(1)}% accuracy
-										</div>
-									</div>
-									<div className="text-center p-4 bg-orange-50 rounded-lg">
-										<div className="text-4xl font-bold text-orange-600 mb-2">
-											{userStats.average_points.toFixed(1)}
-										</div>
-										<div className="text-gray-700 font-medium">Avg Points/Week</div>
-										<div className="text-sm text-gray-500 mt-1">
-											{userStats.weeks_played} weeks played
-										</div>
-									</div>
-								</div>
-								<div className="mt-6 pt-6 border-t border-gray-200">
-									<div className="flex justify-between items-center">
-										<div>
-											<p className="text-sm text-gray-600">Your Standing</p>
-											<p className="text-lg font-semibold text-gray-900">
-												#{userStats.rank} - {userStats.display_name}
-											</p>
-										</div>
-										<Link
-											href="/leaderboard"
-											className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-										>
-											View Full Leaderboard
-										</Link>
-									</div>
-								</div>
+						</Link>
+
+						<Link
+							href="/leaderboard/standings"
+							className="bg-white rounded-lg shadow p-6 border border-gray-200 hover:shadow-md transition-shadow"
+						>
+							<div className="text-center">
+								<h3 className="text-lg font-semibold text-gray-900 mb-2">
+									Leaderboard
+								</h3>
+								<p className="text-sm text-gray-600">
+									View standings and track your performance
+								</p>
 							</div>
-						) : (
-							<div className="text-center py-8 text-gray-500">
-								<p>No stats available yet. Make some picks to get started!</p>
-								<Link
-									href="/picks"
-									className="mt-4 inline-block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-								>
-									Make Your First Picks
-								</Link>
-							</div>
-						)}
+						</Link>
+					</div>
+
+					{/* NFL Data Link - Small at bottom */}
+					<div className="text-center pt-4 border-t border-gray-200">
+						<Link
+							href="/data"
+							className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+						>
+							Explore NFL Data
+						</Link>
 					</div>
 				</div>
 			</main>
