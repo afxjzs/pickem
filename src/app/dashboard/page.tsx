@@ -27,6 +27,9 @@ export default function DashboardPage() {
 	const [loadingWeekly, setLoadingWeekly] = useState(true)
 	const [checkingOnboarding, setCheckingOnboarding] = useState(true)
 	const [season] = useState("2025")
+	const [activeChartTab, setActiveChartTab] = useState<"cumulative" | "weekly">(
+		"cumulative"
+	)
 
 	useEffect(() => {
 		if (!loading && !user) {
@@ -153,19 +156,61 @@ export default function DashboardPage() {
 						</div>
 					)}
 
-					{/* Charts Section */}
+					{/* Charts Section with Tabs */}
 					{weeklyData && currentWeek !== null && weeklyData.length > 0 && (
-						<div className="space-y-6 md:space-y-8 mb-6 md:mb-8">
-							<CumulativePointsChart
-								data={weeklyData}
-								currentUserId={user?.id}
-								currentWeek={currentWeek}
-							/>
-							<WeeklyPointsChart
-								data={weeklyData}
-								currentUserId={user?.id}
-								currentWeek={currentWeek}
-							/>
+						<div className="mb-6 md:mb-8">
+							<div className="bg-white rounded-lg shadow border border-gray-200">
+								{/* Tab Navigation */}
+								<div className="border-b border-gray-200">
+									<nav className="flex -mb-px" aria-label="Tabs">
+										<button
+											onClick={() => setActiveChartTab("cumulative")}
+											className={`
+												flex-1 py-4 px-6 text-center text-sm font-medium transition-colors
+												${
+													activeChartTab === "cumulative"
+														? "text-blue-600 border-b-2 border-blue-600"
+														: "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+												}
+											`}
+										>
+											Cumulative Points
+										</button>
+										<button
+											onClick={() => setActiveChartTab("weekly")}
+											className={`
+												flex-1 py-4 px-6 text-center text-sm font-medium transition-colors
+												${
+													activeChartTab === "weekly"
+														? "text-blue-600 border-b-2 border-blue-600"
+														: "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+												}
+											`}
+										>
+											Week-over-Week Points
+										</button>
+									</nav>
+								</div>
+
+								{/* Tab Content */}
+								<div className="p-4 md:p-6">
+									{activeChartTab === "cumulative" ? (
+										<CumulativePointsChart
+											data={weeklyData}
+											currentUserId={user?.id}
+											currentWeek={currentWeek}
+											hideCard={true}
+										/>
+									) : (
+										<WeeklyPointsChart
+											data={weeklyData}
+											currentUserId={user?.id}
+											currentWeek={currentWeek}
+											hideCard={true}
+										/>
+									)}
+								</div>
+							</div>
 						</div>
 					)}
 
@@ -222,16 +267,6 @@ export default function DashboardPage() {
 									View standings and track your performance
 								</p>
 							</div>
-						</Link>
-					</div>
-
-					{/* NFL Data Link - Small at bottom */}
-					<div className="text-center pt-4 border-t border-gray-200">
-						<Link
-							href="/data"
-							className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
-						>
-							Explore NFL Data
 						</Link>
 					</div>
 				</div>

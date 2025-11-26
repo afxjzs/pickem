@@ -3,6 +3,11 @@ import { espnAPI } from "../espn"
 // Mock fetch globally
 global.fetch = jest.fn()
 
+// Mock timezone utility
+jest.mock("@/lib/utils/timezone", () => ({
+	getETTime: jest.fn(),
+}))
+
 describe("ESPN API Service", () => {
 	beforeEach(() => {
 		jest.clearAllMocks()
@@ -199,16 +204,15 @@ describe("ESPN API Service", () => {
 
 	describe("getCurrentSeasonInfo", () => {
 		it("should fetch current season info", async () => {
-			// Mock Date to be Monday (dayOfWeek = 1) at 10 AM ET to prevent week increment
+			// Mock getETTime to return Monday (dayOfWeek = 1) at 10 AM ET
 			// The logic increments week if: (dayOfWeek === 2 && hour >= 12) || (dayOfWeek > 2)
 			// So Monday (1) at 10 AM should not increment
-			const mockNow = new Date("2024-10-07T14:00:00Z") // Monday 10:00 AM ET
-			jest.spyOn(global, "Date").mockImplementation((() => mockNow) as any)
-			
-			// Mock toLocaleString to simulate ET timezone conversion
-			// Monday 10:00 AM ET
-			const mockETDate = new Date("2024-10-07T14:00:00Z")
-			jest.spyOn(Date.prototype, "toLocaleString").mockReturnValue(mockETDate.toString())
+			const { getETTime } = await import("@/lib/utils/timezone")
+			;(getETTime as jest.Mock).mockReturnValue({
+				dayOfWeek: 1, // Monday
+				hour: 10, // 10 AM
+				minute: 0,
+			})
 
 			const mockSeasonData = {
 				season: { year: 2024 },
@@ -226,9 +230,6 @@ describe("ESPN API Service", () => {
 				season: 2024,
 				currentWeek: 5,
 			})
-
-			// Restore mocks
-			jest.restoreAllMocks()
 		})
 
 		it("should return default values on error", async () => {
@@ -243,4 +244,3 @@ describe("ESPN API Service", () => {
 		})
 	})
 })
-

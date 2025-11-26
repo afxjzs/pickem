@@ -4,6 +4,7 @@ import "./globals.css"
 import { AuthProvider } from "@/lib/contexts/AuthContext"
 import Navigation from "@/components/layout/Navigation"
 import MobileBottomNav from "@/components/layout/MobileBottomNav"
+import Footer from "@/components/layout/Footer"
 
 const geistSans = Geist({
 	variable: "--font-geist-sans",
@@ -31,13 +32,16 @@ export default function RootLayout({
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
 			>
-				<AuthProvider>
-					<Navigation />
-					<div className="pb-16 md:pb-0">
+			<AuthProvider>
+				<Navigation />
+				<div className="pb-16 md:pb-0 min-h-screen flex flex-col">
+					<div className="flex-1">
 						{children}
 					</div>
-					<MobileBottomNav />
-				</AuthProvider>
+					<Footer />
+				</div>
+				<MobileBottomNav />
+			</AuthProvider>
 			</body>
 		</html>
 	)

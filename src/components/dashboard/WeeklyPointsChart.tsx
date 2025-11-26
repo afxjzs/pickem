@@ -30,12 +30,14 @@ interface WeeklyPointsChartProps {
 	data: WeeklyPerformanceUser[]
 	currentUserId?: string
 	currentWeek: number
+	hideCard?: boolean
 }
 
 export default function WeeklyPointsChart({
 	data,
 	currentUserId,
 	currentWeek,
+	hideCard = false,
 }: WeeklyPointsChartProps) {
 	// Use all players, sorted by total points
 	const sortedData = useMemo(() => {
@@ -158,9 +160,13 @@ export default function WeeklyPointsChart({
 		},
 	}
 
+	const cardClasses = hideCard
+		? ""
+		: "bg-white rounded-lg shadow p-4 md:p-6 border border-gray-200"
+
 	if (!chartData || sortedData.length === 0) {
 		return (
-			<div className="bg-white rounded-lg shadow p-4 md:p-6 border border-gray-200">
+			<div className={cardClasses}>
 				<h3 className="text-lg font-semibold text-gray-900 mb-4">
 					Week-over-Week Points
 				</h3>
@@ -170,7 +176,7 @@ export default function WeeklyPointsChart({
 	}
 
 	return (
-		<div className="bg-white rounded-lg shadow p-4 md:p-6 border border-gray-200">
+		<div className={cardClasses}>
 			<h3 className="text-lg font-semibold text-gray-900 mb-4">
 				Week-over-Week Points
 			</h3>

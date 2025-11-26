@@ -30,12 +30,14 @@ interface CumulativePointsChartProps {
 	data: WeeklyPerformanceUser[]
 	currentUserId?: string
 	currentWeek: number
+	hideCard?: boolean
 }
 
 export default function CumulativePointsChart({
 	data,
 	currentUserId,
 	currentWeek,
+	hideCard = false,
 }: CumulativePointsChartProps) {
 	// Use all players, sorted by total points
 	const sortedData = useMemo(() => {
@@ -162,9 +164,13 @@ export default function CumulativePointsChart({
 		},
 	}
 
+	const cardClasses = hideCard
+		? ""
+		: "bg-white rounded-lg shadow p-4 md:p-6 border border-gray-200"
+
 	if (!chartData || sortedData.length === 0) {
 		return (
-			<div className="bg-white rounded-lg shadow p-4 md:p-6 border border-gray-200">
+			<div className={cardClasses}>
 				<h3 className="text-lg font-semibold text-gray-900 mb-4">
 					Cumulative Points Over Time
 				</h3>
@@ -174,7 +180,7 @@ export default function CumulativePointsChart({
 	}
 
 	return (
-		<div className="bg-white rounded-lg shadow p-4 md:p-6 border border-gray-200">
+		<div className={cardClasses}>
 			<h3 className="text-lg font-semibold text-gray-900 mb-4">
 				Cumulative Points Over Time
 			</h3>
