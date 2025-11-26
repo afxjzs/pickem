@@ -144,19 +144,19 @@ function LeaderboardContent() {
 
 	return (
 		<div className="min-h-screen bg-gray-50">
-			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
 				{/* Header */}
-				<div className="mb-6">
-					<h1 className="text-3xl font-bold text-gray-900 mb-2">Leaderboard</h1>
-					<p className="text-gray-600">Season {season}</p>
+				<div className="mb-4 md:mb-6">
+					<h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Leaderboard</h1>
+					<p className="text-sm md:text-base text-gray-600">Season {season}</p>
 				</div>
 
 				{/* Tabs */}
-				<div className="mb-6 border-b border-gray-200">
-					<nav className="-mb-px flex space-x-8">
+				<div className="mb-4 md:mb-6 border-b border-gray-200">
+					<nav className="-mb-px flex space-x-4 md:space-x-8">
 						<button
 							onClick={() => setActiveTab("weekly")}
-							className={`py-4 px-1 border-b-2 font-medium text-sm ${
+							className={`py-3 md:py-4 px-1 border-b-2 font-medium text-xs md:text-sm ${
 								activeTab === "weekly"
 									? "border-blue-500 text-blue-600"
 									: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
@@ -166,7 +166,7 @@ function LeaderboardContent() {
 						</button>
 						<button
 							onClick={() => setActiveTab("overall")}
-							className={`py-4 px-1 border-b-2 font-medium text-sm ${
+							className={`py-3 md:py-4 px-1 border-b-2 font-medium text-xs md:text-sm ${
 								activeTab === "overall"
 									? "border-blue-500 text-blue-600"
 									: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
@@ -181,30 +181,32 @@ function LeaderboardContent() {
 				{activeTab === "weekly" && (
 					<div className="bg-white rounded-lg shadow overflow-hidden">
 						{loadingWeekly ? (
-							<div className="p-8 text-center">
+							<div className="p-6 md:p-8 text-center">
 								<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-								<p className="mt-4 text-gray-600">Loading leaderboard...</p>
+								<p className="mt-4 text-sm md:text-base text-gray-600">Loading leaderboard...</p>
 							</div>
 						) : weeklyData && weeklyData.users && weeklyData.users.length > 0 ? (
-							<div className="overflow-x-auto">
-								<table className="min-w-full divide-y divide-gray-200">
+							<div className="overflow-x-auto -mx-4 sm:mx-0">
+								<div className="inline-block min-w-full align-middle">
+									<div className="overflow-x-auto">
+										<table className="min-w-full divide-y divide-gray-200">
 									<thead className="bg-gray-50">
 										<tr>
-											<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+											<th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10 border-r border-gray-200">
 												Rank
 											</th>
-											<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+											<th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-12 md:left-16 bg-gray-50 z-10 border-r border-gray-200 min-w-[120px]">
 												Pick Set Name
 											</th>
 											{allWeeks.map(week => (
 												<th
 													key={week}
-													className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+													className="px-1 md:px-2 py-2 md:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[50px]"
 												>
 													Wk {week}
 												</th>
 											))}
-											<th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+											<th className="px-2 md:px-4 py-2 md:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
 												Total Pts
 											</th>
 										</tr>
@@ -217,10 +219,14 @@ function LeaderboardContent() {
 													key={userData.user_id}
 													className={isUser ? "bg-yellow-50" : ""}
 												>
-													<td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+													<td className={`px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900 sticky left-0 z-10 border-r border-gray-200 ${
+														isUser ? "bg-yellow-50" : "bg-white"
+													}`}>
 														{userData.rank}
 													</td>
-													<td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+													<td className={`px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900 sticky left-12 md:left-16 z-10 border-r border-gray-200 ${
+														isUser ? "bg-yellow-50" : "bg-white"
+													}`}>
 														{userData.display_name}
 													</td>
 													{allWeeks.map(week => {
@@ -229,7 +235,7 @@ function LeaderboardContent() {
 														return (
 															<td
 																key={week}
-																className={`px-2 py-3 whitespace-nowrap text-sm text-center ${
+																className={`px-1 md:px-2 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm text-center ${
 																	isWinner
 																		? "bg-green-100 font-semibold text-green-800"
 																		: "text-gray-900"
@@ -239,7 +245,7 @@ function LeaderboardContent() {
 															</td>
 														)
 													})}
-													<td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 text-center">
+													<td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm font-semibold text-gray-900 text-center">
 														{userData.total_points}
 													</td>
 												</tr>
@@ -247,9 +253,11 @@ function LeaderboardContent() {
 										})}
 									</tbody>
 								</table>
+									</div>
+								</div>
 							</div>
 						) : (
-							<div className="p-8 text-center text-gray-500">
+							<div className="p-6 md:p-8 text-center text-sm md:text-base text-gray-500">
 								No leaderboard data available yet.
 							</div>
 						)}
@@ -260,37 +268,39 @@ function LeaderboardContent() {
 				{activeTab === "overall" && (
 					<div className="bg-white rounded-lg shadow overflow-hidden">
 						{loadingOverall ? (
-							<div className="p-8 text-center">
+							<div className="p-6 md:p-8 text-center">
 								<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-								<p className="mt-4 text-gray-600">Loading standings...</p>
+								<p className="mt-4 text-sm md:text-base text-gray-600">Loading standings...</p>
 							</div>
 						) : overallData && overallData.length > 0 ? (
-							<div className="overflow-x-auto">
-								<table className="min-w-full divide-y divide-gray-200">
+							<div className="overflow-x-auto -mx-4 sm:mx-0">
+								<div className="inline-block min-w-full align-middle">
+									<div className="overflow-x-auto">
+										<table className="min-w-full divide-y divide-gray-200">
 									<thead className="bg-gray-50">
 										<tr>
-											<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+											<th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10 border-r border-gray-200">
 												Rank
 											</th>
-											<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+											<th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-12 md:left-16 bg-gray-50 z-10 border-r border-gray-200 min-w-[120px]">
 												Pick Set Name
 											</th>
-											<th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+											<th className="px-2 md:px-4 py-2 md:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[80px]">
 												Total Points
 											</th>
-											<th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+											<th className="px-2 md:px-4 py-2 md:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[90px]">
 												Weeks Played
 											</th>
-											<th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+											<th className="px-2 md:px-4 py-2 md:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[80px]">
 												Avg Points
 											</th>
-											<th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+											<th className="px-2 md:px-4 py-2 md:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[80px]">
 												Total Picks
 											</th>
-											<th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+											<th className="px-2 md:px-4 py-2 md:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[90px]">
 												Correct Picks
 											</th>
-											<th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+											<th className="px-2 md:px-4 py-2 md:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[80px]">
 												Correct %
 											</th>
 										</tr>
@@ -303,28 +313,32 @@ function LeaderboardContent() {
 													key={standing.user_id}
 													className={isUser ? "bg-yellow-50" : ""}
 												>
-													<td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+													<td className={`px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900 sticky left-0 z-10 border-r border-gray-200 ${
+														isUser ? "bg-yellow-50" : "bg-white"
+													}`}>
 														{standing.rank}
 													</td>
-													<td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+													<td className={`px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900 sticky left-12 md:left-16 z-10 border-r border-gray-200 ${
+														isUser ? "bg-yellow-50" : "bg-white"
+													}`}>
 														{standing.display_name}
 													</td>
-													<td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 text-center">
+													<td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm font-semibold text-gray-900 text-center">
 														{standing.total_points}
 													</td>
-													<td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-center">
+													<td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm text-gray-500 text-center">
 														{standing.weeks_played}
 													</td>
-													<td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-center">
+													<td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm text-gray-500 text-center">
 														{standing.average_points.toFixed(1)}
 													</td>
-													<td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-center">
+													<td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm text-gray-500 text-center">
 														{standing.total_picks}
 													</td>
-													<td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-center">
+													<td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm text-gray-500 text-center">
 														{standing.correct_picks}
 													</td>
-													<td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-center">
+													<td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm text-gray-500 text-center">
 														{standing.correct_picks_percentage.toFixed(1)}%
 													</td>
 												</tr>
@@ -332,9 +346,11 @@ function LeaderboardContent() {
 										})}
 									</tbody>
 								</table>
+									</div>
+								</div>
 							</div>
 						) : (
-							<div className="p-8 text-center text-gray-500">
+							<div className="p-6 md:p-8 text-center text-sm md:text-base text-gray-500">
 								No standings data available yet.
 							</div>
 						)}

@@ -1,6 +1,6 @@
 "use client"
 
-import { memo } from "react"
+import { memo, useState, useEffect } from "react"
 import Link from "next/link"
 import { useAuth } from "@/lib/contexts/AuthContext"
 import { useRouter } from "next/navigation"
@@ -10,6 +10,7 @@ function Navigation() {
 	const { user, loading, signOut } = useAuth()
 	const router = useRouter()
 	const pathname = usePathname()
+	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 	
 	// Debug logging in dev mode
 	if (process.env.NODE_ENV === 'development') {
@@ -51,6 +52,23 @@ function Navigation() {
 		return pathname === path
 	}
 
+	// Close mobile menu when route changes
+	useEffect(() => {
+		setIsMobileMenuOpen(false)
+	}, [pathname])
+
+	// Prevent body scroll when mobile menu is open
+	useEffect(() => {
+		if (isMobileMenuOpen) {
+			document.body.classList.add("overflow-hidden")
+		} else {
+			document.body.classList.remove("overflow-hidden")
+		}
+		return () => {
+			document.body.classList.remove("overflow-hidden")
+		}
+	}, [isMobileMenuOpen])
+
 	// Always render the navigation structure to prevent layout shift
 	// Only show content when user is authenticated
 	if (!user && !loading) {
@@ -59,21 +77,22 @@ function Navigation() {
 	}
 
 	return (
-		<header className="bg-white shadow">
+		<header className="bg-white shadow relative z-50">
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-				<div className="flex justify-between items-center py-6">
-					<div className="flex items-center space-x-8">
-						<h1 className="text-3xl font-bold text-gray-900">Pick'em</h1>
+				<div className="flex justify-between items-center py-4 md:py-6">
+					<div className="flex items-center space-x-4 md:space-x-8">
+						<h1 className="text-2xl md:text-3xl font-bold text-gray-900">Pick'em</h1>
+						{/* Desktop Navigation - Hidden on mobile */}
 						{loading ? (
 							// Show loading state for nav items
-							<nav className="flex items-center space-x-4">
+							<nav className="hidden md:flex items-center space-x-4">
 								<div className="px-3 py-2 rounded-md text-sm font-medium text-gray-400 animate-pulse">
 									Loading...
 								</div>
 							</nav>
 						) : user ? (
 							// Show full nav when authenticated
-							<nav className="flex items-center space-x-4">
+							<nav className="hidden md:flex items-center space-x-4">
 								<Link
 									href="/dashboard"
 									className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -127,7 +146,7 @@ function Navigation() {
 							</nav>
 						) : (
 							// Not authenticated - show minimal nav or nothing
-							<nav className="flex items-center space-x-4">
+							<nav className="hidden md:flex items-center space-x-4">
 								<Link
 									href="/"
 									className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100"
@@ -137,20 +156,40 @@ function Navigation() {
 							</nav>
 						)}
 					</div>
-					<div className="flex items-center space-x-4">
+					<div className="flex items-center space-x-2 md:space-x-4">
+						{/* Mobile Menu Button */}
+						{user && !loading && (
+							<button
+								onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+								className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+								aria-label="Toggle menu"
+							>
+								{isMobileMenuOpen ? (
+									<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+									</svg>
+								) : (
+									<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+									</svg>
+								)}
+							</button>
+						)}
+						{/* Desktop User Actions */}
 						{loading ? (
-							<div className="text-gray-400 animate-pulse">Loading...</div>
+							<div className="hidden md:block text-gray-400 animate-pulse">Loading...</div>
 						) : user ? (
 							<>
 								<Link
 									href="/profile"
-									className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+									className="hidden md:block text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors truncate max-w-[150px]"
+									title={user.email}
 								>
 									{user.email}
 								</Link>
 								<button
 									onClick={handleSignOut}
-									className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+									className="hidden md:block bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
 								>
 									Sign Out
 								</button>
@@ -159,13 +198,13 @@ function Navigation() {
 							<>
 								<Link
 									href="/signin"
-									className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+									className="hidden md:block text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
 								>
 									Sign In
 								</Link>
 								<Link
 									href="/signup"
-									className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+									className="hidden md:block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
 								>
 									Sign Up
 								</Link>
@@ -174,6 +213,106 @@ function Navigation() {
 					</div>
 				</div>
 			</div>
+
+			{/* Mobile Menu Overlay */}
+			{isMobileMenuOpen && user && !loading && (
+				<div className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40" onClick={() => setIsMobileMenuOpen(false)}>
+					<div 
+						className="fixed inset-y-0 right-0 w-64 bg-white shadow-lg z-50 overflow-y-auto"
+						onClick={(e) => e.stopPropagation()}
+					>
+						<div className="px-4 py-6">
+							<div className="flex items-center justify-between mb-6">
+								<h2 className="text-xl font-bold text-gray-900">Menu</h2>
+								<button
+									onClick={() => setIsMobileMenuOpen(false)}
+									className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+									aria-label="Close menu"
+								>
+									<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+									</svg>
+								</button>
+							</div>
+							<nav className="space-y-2">
+								<Link
+									href="/dashboard"
+									onClick={() => setIsMobileMenuOpen(false)}
+									className={`block px-4 py-3 rounded-md text-base font-medium transition-colors ${
+										isActive("/dashboard")
+											? "bg-gray-100 text-gray-900"
+											: "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+									}`}
+								>
+									Dashboard
+								</Link>
+								<Link
+									href="/picks"
+									onClick={() => setIsMobileMenuOpen(false)}
+									className={`block px-4 py-3 rounded-md text-base font-medium transition-colors ${
+										isActive("/picks")
+											? "bg-gray-100 text-gray-900"
+											: "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+									}`}
+								>
+									My Picks
+								</Link>
+								<Link
+									href="/leaderboard"
+									onClick={() => setIsMobileMenuOpen(false)}
+									className={`block px-4 py-3 rounded-md text-base font-medium transition-colors ${
+										isActive("/leaderboard")
+											? "bg-gray-100 text-gray-900"
+											: "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+									}`}
+								>
+									Leaderboard
+								</Link>
+								<Link
+									href="/group-picks/current-week"
+									onClick={() => setIsMobileMenuOpen(false)}
+									className={`block px-4 py-3 rounded-md text-base font-medium transition-colors ${
+										isActive("/group-picks")
+											? "bg-gray-100 text-gray-900"
+											: "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+									}`}
+								>
+									Group Picks
+								</Link>
+								<Link
+									href="/data"
+									onClick={() => setIsMobileMenuOpen(false)}
+									className={`block px-4 py-3 rounded-md text-base font-medium transition-colors ${
+										isActive("/data")
+											? "bg-gray-100 text-gray-900"
+											: "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+									}`}
+								>
+									NFL Data
+								</Link>
+							</nav>
+							<div className="mt-6 pt-6 border-t border-gray-200 space-y-2">
+								<Link
+									href="/profile"
+									onClick={() => setIsMobileMenuOpen(false)}
+									className="block px-4 py-3 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+								>
+									{user.email}
+								</Link>
+								<button
+									onClick={() => {
+										setIsMobileMenuOpen(false)
+										handleSignOut()
+									}}
+									className="w-full text-left px-4 py-3 rounded-md text-base font-medium bg-red-600 hover:bg-red-700 text-white transition-colors"
+								>
+									Sign Out
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			)}
 		</header>
 	)
 }

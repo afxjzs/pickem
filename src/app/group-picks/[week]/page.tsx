@@ -245,26 +245,26 @@ export default function GroupPicksPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-50 py-8">
+		<div className="min-h-screen bg-gray-50 py-4 md:py-8">
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 				{/* Header */}
-				<div className="mb-8">
-					<h1 className="text-3xl font-bold text-gray-900 mb-4">
+				<div className="mb-4 md:mb-8">
+					<h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">
 						Group Picks
 					</h1>
-					<p className="text-gray-600 mb-6">
+					<p className="text-sm md:text-base text-gray-600 mb-4 md:mb-6">
 						Season {season}
 					</p>
 
 					{/* Week Selector */}
-					<div className="mb-6 bg-white rounded-lg shadow p-4">
-						<div className="flex flex-wrap gap-2">
-							<span className="text-sm font-medium text-gray-700 mr-2">Week:</span>
+					<div className="mb-4 md:mb-6 bg-white rounded-lg shadow p-3 md:p-4">
+						<div className="flex flex-wrap gap-1.5 md:gap-2">
+							<span className="text-xs md:text-sm font-medium text-gray-700 mr-2">Week:</span>
 							{allWeeks.map(weekNum => (
 								<button
 									key={weekNum}
 									onClick={() => handleGroupPicksWeekChange(weekNum)}
-									className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+									className={`px-2 md:px-3 py-1 rounded-md text-xs md:text-sm font-medium transition-colors ${
 										groupPicksWeek === weekNum
 											? "bg-blue-600 text-white"
 											: "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -279,44 +279,46 @@ export default function GroupPicksPage() {
 
 				{/* Group Picks Table */}
 				{groupPicksWeek === null ? (
-					<div className="bg-white rounded-lg shadow p-8 text-center">
+					<div className="bg-white rounded-lg shadow p-6 md:p-8 text-center">
 						<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-						<p className="mt-4 text-gray-600">Loading...</p>
+						<p className="mt-4 text-sm md:text-base text-gray-600">Loading...</p>
 					</div>
 				) : loadingGroupPicks ? (
-					<div className="bg-white rounded-lg shadow p-8 text-center">
+					<div className="bg-white rounded-lg shadow p-6 md:p-8 text-center">
 						<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-						<p className="mt-4 text-gray-600">Loading picks...</p>
+						<p className="mt-4 text-sm md:text-base text-gray-600">Loading picks...</p>
 					</div>
 				) : groupPicksData && groupPicksData.games.length > 0 ? (
 					<div className="bg-white rounded-lg shadow overflow-hidden">
-						<div className="overflow-x-auto">
-							<table className="min-w-full divide-y divide-gray-200">
+						<div className="overflow-x-auto -mx-4 sm:mx-0">
+							<div className="inline-block min-w-full align-middle">
+								<div className="overflow-x-auto">
+									<table className="min-w-full divide-y divide-gray-200">
 								<thead className="bg-gray-50">
 									{/* Game Header Row */}
 									<tr>
-										<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10 border-r border-gray-200">
+										<th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10 border-r border-gray-200 min-w-[100px]">
 											Team Name
 										</th>
 										{groupPicksData.games.map((game) => (
 											<th
 												key={game.id}
-												className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[70px]"
+												className="px-1 md:px-2 py-2 md:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[60px] md:min-w-[70px]"
 											>
 												<div className="flex flex-col">
-													<span>{game.away_team}</span>
-													<span className="text-gray-400">@</span>
-													<span>{game.home_team}</span>
+													<span className="text-xs">{game.away_team}</span>
+													<span className="text-gray-400 text-xs">@</span>
+													<span className="text-xs">{game.home_team}</span>
 												</div>
 											</th>
 										))}
-										<th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+										<th className="px-2 md:px-4 py-2 md:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
 											Points
 										</th>
 									</tr>
 									{/* Favored Row */}
 									<tr className="bg-gray-100">
-										<td className="px-4 py-2 text-xs font-medium text-gray-600 sticky left-0 bg-gray-100 z-10 border-r border-gray-200">
+										<td className="px-2 md:px-4 py-1.5 md:py-2 text-xs font-medium text-gray-600 sticky left-0 bg-gray-100 z-10 border-r border-gray-200">
 											Favored
 										</td>
 										{groupPicksData.games.map((game) => {
@@ -324,7 +326,7 @@ export default function GroupPicksPage() {
 											return (
 												<td
 													key={game.id}
-													className="px-2 py-2 text-center text-xs text-gray-600 font-semibold"
+													className="px-1 md:px-2 py-1.5 md:py-2 text-center text-xs text-gray-600 font-semibold"
 												>
 													{favoredTeam || "--"}
 												</td>
@@ -334,7 +336,7 @@ export default function GroupPicksPage() {
 									</tr>
 									{/* Spread Row */}
 									<tr className="bg-gray-100">
-										<td className="px-4 py-2 text-xs font-medium text-gray-600 sticky left-0 bg-gray-100 z-10 border-r border-gray-200">
+										<td className="px-2 md:px-4 py-1.5 md:py-2 text-xs font-medium text-gray-600 sticky left-0 bg-gray-100 z-10 border-r border-gray-200">
 											Spread
 										</td>
 										{groupPicksData.games.map((game) => {
@@ -342,7 +344,7 @@ export default function GroupPicksPage() {
 											return (
 												<td
 													key={game.id}
-													className="px-2 py-2 text-center text-xs text-gray-600"
+													className="px-1 md:px-2 py-1.5 md:py-2 text-center text-xs text-gray-600"
 												>
 													{spread !== null && spread !== undefined
 														? `${spread > 0 ? "+" : ""}${spread}`
@@ -354,7 +356,7 @@ export default function GroupPicksPage() {
 									</tr>
 									{/* Underdog Row */}
 									<tr className="bg-gray-100">
-										<td className="px-4 py-2 text-xs font-medium text-gray-600 sticky left-0 bg-gray-100 z-10 border-r border-gray-200">
+										<td className="px-2 md:px-4 py-1.5 md:py-2 text-xs font-medium text-gray-600 sticky left-0 bg-gray-100 z-10 border-r border-gray-200">
 											Underdog
 										</td>
 										{groupPicksData.games.map((game) => {
@@ -367,7 +369,7 @@ export default function GroupPicksPage() {
 											return (
 												<td
 													key={game.id}
-													className="px-2 py-2 text-center text-xs text-gray-600"
+													className="px-1 md:px-2 py-1.5 md:py-2 text-center text-xs text-gray-600"
 												>
 													{underdogTeam || "--"}
 												</td>
@@ -377,7 +379,7 @@ export default function GroupPicksPage() {
 									</tr>
 									{/* Score Row - Show scores for live/final games */}
 									<tr className="bg-gray-50">
-										<td className="px-4 py-2 text-xs font-medium text-gray-600 sticky left-0 bg-gray-50 z-10 border-r border-gray-200">
+										<td className="px-2 md:px-4 py-1.5 md:py-2 text-xs font-medium text-gray-600 sticky left-0 bg-gray-50 z-10 border-r border-gray-200">
 											Score
 										</td>
 										{groupPicksData.games.map((game) => {
@@ -390,7 +392,7 @@ export default function GroupPicksPage() {
 											return (
 												<td
 													key={game.id}
-													className={`px-2 py-2 text-center text-xs font-semibold ${
+													className={`px-1 md:px-2 py-1.5 md:py-2 text-center text-xs font-semibold ${
 														game.status === "live" ? "text-red-600" : 
 														game.status === "final" ? "text-gray-900" : 
 														"text-gray-400"
@@ -419,7 +421,7 @@ export default function GroupPicksPage() {
 												key={userPicks.user_id}
 												className={isUser ? "bg-yellow-50" : ""}
 											>
-												<td className={`px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 z-10 border-r border-gray-200 ${
+												<td className={`px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900 sticky left-0 z-10 border-r border-gray-200 ${
 													isUser ? "bg-yellow-50" : "bg-white"
 												}`}>
 													{userPicks.display_name}
@@ -438,7 +440,7 @@ export default function GroupPicksPage() {
 															return (
 																<td
 																	key={game.id}
-																	className="px-2 py-3 text-center text-sm text-gray-400"
+																	className="px-1 md:px-2 py-2 md:py-3 text-center text-xs md:text-sm text-gray-400"
 																>
 																	--
 																</td>
@@ -448,7 +450,7 @@ export default function GroupPicksPage() {
 															return (
 																<td
 																	key={game.id}
-																	className="px-2 py-3 text-center text-sm"
+																	className="px-1 md:px-2 py-2 md:py-3 text-center text-xs md:text-sm"
 																>
 																</td>
 															)
@@ -462,7 +464,7 @@ export default function GroupPicksPage() {
 														return (
 															<td
 																key={game.id}
-																className="px-2 py-3 text-center text-sm"
+																className="px-1 md:px-2 py-2 md:py-3 text-center text-xs md:text-sm"
 															>
 															</td>
 														)
@@ -476,7 +478,7 @@ export default function GroupPicksPage() {
 															return (
 																<td
 																	key={game.id}
-																	className="px-2 py-3 text-center text-sm"
+																	className="px-1 md:px-2 py-2 md:py-3 text-center text-xs md:text-sm"
 																>
 																</td>
 															)
@@ -490,7 +492,7 @@ export default function GroupPicksPage() {
 															return (
 																<td
 																	key={game.id}
-																	className="px-2 py-3 text-center text-sm font-medium text-gray-700"
+																	className="px-1 md:px-2 py-2 md:py-3 text-center text-xs md:text-sm font-medium text-gray-700"
 																>
 																	{teamAbbr}
 																</td>
@@ -504,7 +506,7 @@ export default function GroupPicksPage() {
 														return (
 															<td
 																key={game.id}
-																className="px-2 py-3 text-center text-sm text-gray-400"
+																className="px-1 md:px-2 py-2 md:py-3 text-center text-xs md:text-sm text-gray-400"
 															>
 																--
 															</td>
@@ -542,7 +544,7 @@ export default function GroupPicksPage() {
 													return (
 														<td
 															key={game.id}
-															className={`px-2 py-3 text-center text-sm font-medium ${pickColor}`}
+															className={`px-1 md:px-2 py-2 md:py-3 text-center text-xs md:text-sm font-medium ${pickColor}`}
 														>
 															<div className="flex flex-col">
 																<span>{teamAbbr}</span>
@@ -551,7 +553,7 @@ export default function GroupPicksPage() {
 														</td>
 													)
 												})}
-												<td className={`px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 text-center ${
+												<td className={`px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm font-semibold text-gray-900 text-center ${
 													isUser ? "bg-yellow-50" : ""
 												}`}>
 													{userPicks.weekly_points || 0}
@@ -561,10 +563,12 @@ export default function GroupPicksPage() {
 									})}
 								</tbody>
 							</table>
+								</div>
+							</div>
 						</div>
 					</div>
 				) : (
-					<div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+					<div className="bg-white rounded-lg shadow p-6 md:p-8 text-center text-sm md:text-base text-gray-500">
 						No picks data available for this week.
 					</div>
 				)}

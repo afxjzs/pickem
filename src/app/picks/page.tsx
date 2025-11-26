@@ -124,6 +124,11 @@ function PicksPageContent() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [user, season, week])
 
+	// Filter games to only show current week to prevent race condition
+	const filteredGames = games.filter((game) => {
+		return Number(game.week) === Number(week) && String(game.season) === String(season)
+	})
+
 	// Fetch picks after games are loaded
 	// Only fetch picks if games match the current week/season
 	useEffect(() => {
@@ -493,7 +498,7 @@ function PicksPageContent() {
 
 	const getUsedConfidencePoints = () => {
 		// Only count confidence points used for games in the current week
-		const currentWeekGameIds = new Set(games.map(g => String(g.id).trim()))
+		const currentWeekGameIds = new Set(filteredGames.map(g => String(g.id).trim()))
 		return userPicks
 			.filter((pick) => {
 				// Only include picks for games in the current week
@@ -627,24 +632,24 @@ function PicksPageContent() {
 
 	return (
 		<div className="min-h-screen bg-gray-50">
-			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-				{/* Header */}
-				<div className="mb-8">
-					<h1 className="text-3xl font-bold text-gray-900 mb-4">
+			{/* Header with padding */}
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
+				<div className="mb-4 md:mb-8">
+					<h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">
 						Make Your Picks
 					</h1>
-					<p className="text-gray-600 mb-6">
+					<p className="text-sm md:text-base text-gray-600 mb-4 md:mb-6">
 						Pick the winner of each game and assign confidence points (1-16).
 						Each confidence point can only be used once per week.
 					</p>
 					
 					{/* Picks Status Indicator */}
 					{(() => {
-						// Count non-locked games
-						const nonLockedGames = games.filter((g) => !isGameLocked(g))
+						// Count non-locked games (use filteredGames to avoid race condition)
+						const nonLockedGames = filteredGames.filter((g) => !isGameLocked(g))
 						// Count complete picks (has both winner and confidence points > 0)
 						const completePicks = userPicks.filter((pick) => {
-							const game = games.find((g) => String(g.id).trim() === String(pick.gameId).trim())
+							const game = filteredGames.find((g) => String(g.id).trim() === String(pick.gameId).trim())
 							return game && !isGameLocked(game) && pick.pickedTeam && pick.confidencePoints > 0
 						})
 						const isComplete = nonLockedGames.length > 0 && completePicks.length === nonLockedGames.length
@@ -660,12 +665,12 @@ function PicksPageContent() {
 						)
 					})()}
 
-					{/* Controls */}
-					<div className="flex flex-wrap gap-4 items-center mb-6">
-						<div>
+					{/* Controls - Mobile optimized */}
+					<div className="flex flex-wrap gap-3 md:gap-4 items-center mb-4 md:mb-6">
+						<div className="flex-1 min-w-[120px]">
 							<label
 								htmlFor="season"
-								className="block text-sm font-medium text-gray-700 mb-1"
+								className="block text-xs md:text-sm font-medium text-gray-700 mb-1"
 							>
 								Season
 							</label>
@@ -673,16 +678,16 @@ function PicksPageContent() {
 								id="season"
 								value={season}
 								onChange={(e) => setSeason(e.target.value)}
-								className="bg-white border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+								className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm md:text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
 							>
 								<option value="2025">2025</option>
 							</select>
 						</div>
 
-						<div>
+						<div className="flex-1 min-w-[120px]">
 							<label
 								htmlFor="week"
-								className="block text-sm font-medium text-gray-700 mb-1"
+								className="block text-xs md:text-sm font-medium text-gray-700 mb-1"
 							>
 								Week
 							</label>
@@ -690,7 +695,7 @@ function PicksPageContent() {
 								id="week"
 								value={week}
 								onChange={(e) => handleWeekChange(parseInt(e.target.value))}
-								className="bg-white border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+								className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm md:text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
 							>
 								{Array.from({ length: 18 }, (_, i) => i + 1).map((w) => (
 									<option key={w} value={w}>
@@ -761,15 +766,16 @@ function PicksPageContent() {
 						</div>
 					)}
 				</div>
+			</div>
 
-				{/* Games */}
-				<div className="space-y-6">
-					{games.length === 0 ? (
-						<div className="text-center py-12">
-							<p className="text-gray-500">No games found for Week {week}</p>
-						</div>
-					) : (
-						games.map((game) => {
+			{/* Games - No padding/margin between items */}
+			<div>
+				{filteredGames.length === 0 ? (
+					<div className="text-center py-8 md:py-12 px-4 sm:px-6 lg:px-8">
+						<p className="text-gray-500 text-sm md:text-base">No games found for Week {week}</p>
+					</div>
+				) : (
+					filteredGames.map((game) => {
 								// Find the pick for THIS specific game by matching gameId
 								// Use strict comparison with normalized IDs
 								const gameIdStr = String(game.id).trim()
@@ -799,21 +805,21 @@ function PicksPageContent() {
 
 							return (
 								<div
-									key={`game-${game.id || `index-${games.indexOf(game)}`}`}
-									className="bg-white rounded-lg shadow p-6 relative"
+									key={`game-${game.id || `index-${filteredGames.indexOf(game)}`}`}
+									className="bg-white border-b border-gray-200 py-3 md:py-4 px-4 sm:px-6 lg:px-8 relative"
 								>
 									{/* Save Status Indicator - Upper Right */}
-									<div className="absolute top-4 right-4">
+									<div className="absolute top-2 right-2 md:top-4 md:right-4">
 										{isLocked ? (
 											<div className="text-gray-500">
-												<svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+												<svg className="w-5 h-5 md:w-6 md:h-6" fill="currentColor" viewBox="0 0 20 20">
 													<path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
 												</svg>
 											</div>
 										) : (
 											<>
 												{userPick?.saving && (
-													<div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+													<div className="animate-spin rounded-full h-5 w-5 md:h-6 md:w-6 border-b-2 border-blue-600"></div>
 												)}
 												{!userPick?.saving && (() => {
 													// Check if pick is complete (has both winner and confidence points)
@@ -823,7 +829,7 @@ function PicksPageContent() {
 														// Complete and saved - green checkmark
 														return (
 															<div className="text-green-600">
-																<svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+																<svg className="w-5 h-5 md:w-6 md:h-6" fill="currentColor" viewBox="0 0 20 20">
 																	<path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
 																</svg>
 															</div>
@@ -832,7 +838,7 @@ function PicksPageContent() {
 														// Incomplete - yellow warning icon (circle with horizontal bar/minus)
 														return (
 															<div className="text-yellow-600">
-																<svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+																<svg className="w-5 h-5 md:w-6 md:h-6" fill="currentColor" viewBox="0 0 20 20">
 																	<path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
 																</svg>
 															</div>
@@ -844,126 +850,10 @@ function PicksPageContent() {
 										)}
 									</div>
 
-									{/* Game Header */}
-									<div className="flex items-center justify-between mb-4">
-										<div className="flex items-center space-x-3">
-											<span className="text-sm font-medium text-gray-500">
-												Week {game.week}
-											</span>
-											{game.is_snf && (
-												<span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
-													SNF
-												</span>
-											)}
-											{game.is_mnf && (
-												<span className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">
-													MNF
-												</span>
-											)}
-										</div>
-									</div>
-
-
-									{/* Teams - Button-based Selection */}
-									{!isLocked ? (
-										<div className="mb-4">
-											<div className="flex items-center gap-4">
-												{/* Away Team Button */}
-												<button
-													type="button"
-													onClick={() => handlePickChange(game.id, game.away_team)}
-													disabled={isCompleted}
-													className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-all flex-1 ${
-														userPick?.pickedTeam === game.away_team
-															? pickCorrect === true
-																? "border-green-500 bg-green-50 shadow-md"
-																: pickCorrect === false
-																? "border-red-500 bg-red-50 shadow-md"
-																: "border-blue-500 bg-blue-50 shadow-md"
-															: "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
-													} ${isCompleted ? "opacity-75 cursor-not-allowed" : ""}`}
-												>
-													{awayTeam?.logo_url && (
-														<img
-															src={awayTeam.logo_url}
-															alt={awayTeam.name}
-															className="w-12 h-12 flex-shrink-0"
-														/>
-													)}
-													<div className="flex-1 text-left">
-														<div className="font-semibold text-gray-900">
-															{awayTeam?.name || game.away_team}
-														</div>
-														<div className="text-sm text-gray-500">
-															{game.away_team}
-														</div>
-													</div>
-													{/* Show score for completed games */}
-													{isCompleted && hasScores && (
-														<div className="text-2xl font-bold text-gray-900">
-															{game.away_score}
-														</div>
-													)}
-													{userPick?.pickedTeam === game.away_team && !isCompleted && (
-														<div className="text-blue-600">
-															<svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-																<path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-															</svg>
-														</div>
-													)}
-												</button>
-
-												{/* @ Symbol */}
-												<div className="text-gray-400 font-bold text-xl">@</div>
-
-												{/* Home Team Button */}
-												<button
-													type="button"
-													onClick={() => handlePickChange(game.id, game.home_team)}
-													disabled={isCompleted}
-													className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-all flex-1 ${
-														userPick?.pickedTeam === game.home_team
-															? pickCorrect === true
-																? "border-green-500 bg-green-50 shadow-md"
-																: pickCorrect === false
-																? "border-red-500 bg-red-50 shadow-md"
-																: "border-blue-500 bg-blue-50 shadow-md"
-															: "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
-													} ${isCompleted ? "opacity-75 cursor-not-allowed" : ""}`}
-												>
-													{homeTeam?.logo_url && (
-														<img
-															src={homeTeam.logo_url}
-															alt={homeTeam.name}
-															className="w-12 h-12 flex-shrink-0"
-														/>
-													)}
-													<div className="flex-1 text-left">
-														<div className="font-semibold text-gray-900">
-															{homeTeam?.name || game.home_team}
-														</div>
-														<div className="text-sm text-gray-500">
-															{game.home_team}
-														</div>
-													</div>
-													{/* Show score for completed games */}
-													{isCompleted && hasScores && (
-														<div className="text-2xl font-bold text-gray-900">
-															{game.home_score}
-														</div>
-													)}
-													{userPick?.pickedTeam === game.home_team && !isCompleted && (
-														<div className="text-blue-600">
-															<svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-																<path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-															</svg>
-														</div>
-													)}
-												</button>
-											</div>
-
-											{/* Game Time */}
-											<div className="text-center mt-2 text-sm text-gray-500">
+									{/* Game Header - Compact */}
+									<div className="flex items-center justify-between mb-2">
+										<div className="flex items-center space-x-2">
+											<span className="text-xs text-gray-500">
 												{new Date(game.start_time).toLocaleDateString([], {
 													weekday: "short",
 													month: "short",
@@ -973,14 +863,111 @@ function PicksPageContent() {
 													hour: "2-digit",
 													minute: "2-digit",
 												})}
+											</span>
+											{game.is_snf && (
+												<span className="bg-red-100 text-red-800 text-xs px-1.5 py-0.5 rounded">
+													SNF
+												</span>
+											)}
+											{game.is_mnf && (
+												<span className="bg-orange-100 text-orange-800 text-xs px-1.5 py-0.5 rounded">
+													MNF
+												</span>
+											)}
+										</div>
+									</div>
+
+
+									{/* Teams - Compact List View */}
+									{!isLocked ? (
+										<div className="mb-2">
+											<div className="flex items-center gap-2 md:gap-3">
+												{/* Away Team Button */}
+												<button
+													type="button"
+													onClick={() => handlePickChange(game.id, game.away_team)}
+													disabled={isCompleted}
+													className={`flex items-center space-x-2 p-2 md:p-2.5 rounded border-2 transition-all flex-1 ${
+														userPick?.pickedTeam === game.away_team
+															? pickCorrect === true
+																? "border-green-500 bg-green-50"
+																: pickCorrect === false
+																? "border-red-500 bg-red-50"
+																: "border-blue-500 bg-blue-50"
+															: "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+													} ${isCompleted ? "opacity-75 cursor-not-allowed" : ""}`}
+												>
+													{awayTeam?.logo_url && (
+														<img
+															src={awayTeam.logo_url}
+															alt={awayTeam.name}
+															className="w-8 h-8 md:w-10 md:h-10 flex-shrink-0"
+														/>
+													)}
+													<div className="flex-1 text-left min-w-0">
+														<div className="font-semibold text-sm text-gray-900 truncate">
+															{awayTeam?.name || game.away_team}
+														</div>
+														<div className="text-xs text-gray-500">
+															{game.away_team}
+														</div>
+													</div>
+													{/* Show score for completed games */}
+													{isCompleted && hasScores && (
+														<div className="text-lg md:text-xl font-bold text-gray-900">
+															{game.away_score}
+														</div>
+													)}
+												</button>
+
+												{/* @ Symbol */}
+												<div className="text-gray-400 font-bold text-base md:text-lg">@</div>
+
+												{/* Home Team Button */}
+												<button
+													type="button"
+													onClick={() => handlePickChange(game.id, game.home_team)}
+													disabled={isCompleted}
+													className={`flex items-center space-x-2 p-2 md:p-2.5 rounded border-2 transition-all flex-1 ${
+														userPick?.pickedTeam === game.home_team
+															? pickCorrect === true
+																? "border-green-500 bg-green-50"
+																: pickCorrect === false
+																? "border-red-500 bg-red-50"
+																: "border-blue-500 bg-blue-50"
+															: "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+													} ${isCompleted ? "opacity-75 cursor-not-allowed" : ""}`}
+												>
+													{homeTeam?.logo_url && (
+														<img
+															src={homeTeam.logo_url}
+															alt={homeTeam.name}
+															className="w-8 h-8 md:w-10 md:h-10 flex-shrink-0"
+														/>
+													)}
+													<div className="flex-1 text-left min-w-0">
+														<div className="font-semibold text-sm text-gray-900 truncate">
+															{homeTeam?.name || game.home_team}
+														</div>
+														<div className="text-xs text-gray-500">
+															{game.home_team}
+														</div>
+													</div>
+													{/* Show score for completed games */}
+													{isCompleted && hasScores && (
+														<div className="text-lg md:text-xl font-bold text-gray-900">
+															{game.home_score}
+														</div>
+													)}
+												</button>
 											</div>
 										</div>
 									) : (
-										/* Locked Game Display */
-										<div className="mb-4">
-											<div className="flex items-center gap-4">
+										/* Locked Game Display - Compact */
+										<div className="mb-2">
+											<div className="flex items-center gap-2 md:gap-3">
 												{/* Locked Away Team */}
-												<div className={`flex items-center space-x-3 p-4 rounded-lg border-2 flex-1 ${
+												<div className={`flex items-center space-x-2 p-2 md:p-2.5 rounded border-2 flex-1 ${
 													userPick?.pickedTeam === game.away_team
 														? pickCorrect === true
 															? "border-green-500 bg-green-50"
@@ -993,30 +980,30 @@ function PicksPageContent() {
 														<img
 															src={awayTeam.logo_url}
 															alt={awayTeam.name}
-															className="w-12 h-12 flex-shrink-0"
+															className="w-8 h-8 md:w-10 md:h-10 flex-shrink-0"
 														/>
 													)}
-													<div className="flex-1 text-left">
-														<div className="font-semibold text-gray-900">
+													<div className="flex-1 text-left min-w-0">
+														<div className="font-semibold text-sm text-gray-900 truncate">
 															{awayTeam?.name || game.away_team}
 														</div>
-														<div className="text-sm text-gray-500">
+														<div className="text-xs text-gray-500">
 															{game.away_team}
 														</div>
 													</div>
 													{/* Show score for completed games */}
 													{isCompleted && hasScores && (
-														<div className="text-2xl font-bold text-gray-900">
+														<div className="text-lg md:text-xl font-bold text-gray-900">
 															{game.away_score}
 														</div>
 													)}
 												</div>
 
 												{/* @ Symbol */}
-												<div className="text-gray-400 font-bold text-xl">@</div>
+												<div className="text-gray-400 font-bold text-base md:text-lg">@</div>
 
 												{/* Locked Home Team */}
-												<div className={`flex items-center space-x-3 p-4 rounded-lg border-2 flex-1 ${
+												<div className={`flex items-center space-x-2 p-2 md:p-2.5 rounded border-2 flex-1 ${
 													userPick?.pickedTeam === game.home_team
 														? pickCorrect === true
 															? "border-green-500 bg-green-50"
@@ -1029,20 +1016,20 @@ function PicksPageContent() {
 														<img
 															src={homeTeam.logo_url}
 															alt={homeTeam.name}
-															className="w-12 h-12 flex-shrink-0"
+															className="w-8 h-8 md:w-10 md:h-10 flex-shrink-0"
 														/>
 													)}
-													<div className="flex-1 text-left">
-														<div className="font-semibold text-gray-900">
+													<div className="flex-1 text-left min-w-0">
+														<div className="font-semibold text-sm text-gray-900 truncate">
 															{homeTeam?.name || game.home_team}
 														</div>
-														<div className="text-sm text-gray-500">
+														<div className="text-xs text-gray-500">
 															{game.home_team}
 														</div>
 													</div>
 													{/* Show score for completed games */}
 													{isCompleted && hasScores && (
-														<div className="text-2xl font-bold text-gray-900">
+														<div className="text-lg md:text-xl font-bold text-gray-900">
 															{game.home_score}
 														</div>
 													)}
@@ -1091,9 +1078,9 @@ function PicksPageContent() {
 									)}
 
 									{/* Confidence Points - Button Row */}
-									<div className="mb-4">
-										<div className="flex flex-wrap gap-2 justify-center">
-											{Array.from({ length: games.length }, (_, i) => i + 1).map((point) => {
+									<div className="mb-2">
+										<div className="flex flex-wrap gap-1 md:gap-1.5 justify-center">
+											{Array.from({ length: filteredGames.length }, (_, i) => i + 1).map((point) => {
 												const isUsed = getUsedConfidencePoints().includes(point)
 												const isCurrent = userPick?.confidencePoints === point
 												const usedByGame = userPicks.find((p) => p.confidencePoints === point && String(p.gameId).trim() !== String(game.id).trim())
@@ -1127,7 +1114,7 @@ function PicksPageContent() {
 														type="button"
 														onClick={() => !isDisabled && handleConfidenceChange(game.id, point)}
 														disabled={isDisabled}
-														className={`px-4 py-2 rounded-md font-medium transition-all ${
+														className={`px-2.5 py-1 md:px-3 md:py-1.5 rounded text-xs md:text-sm font-medium transition-all ${
 															isCurrent
 																? "bg-blue-600 text-white shadow-md border-2 border-blue-600"
 																: wasJustCleared
@@ -1160,19 +1147,18 @@ function PicksPageContent() {
 					)}
 				</div>
 
-				{/* Submit Button */}
-				{games.length > 0 && (
-					<div className="mt-8 text-center">
-						<button
-							onClick={submitPicks}
-							disabled={submitting || games.length === 0}
-							className="bg-blue-600 text-white px-8 py-3 rounded-md font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-						>
-							{submitting ? "Submitting..." : "Submit Picks"}
-						</button>
-					</div>
-				)}
-			</div>
+			{/* Submit Button */}
+			{filteredGames.length > 0 && (
+				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 md:mt-6 text-center">
+					<button
+						onClick={submitPicks}
+						disabled={submitting || filteredGames.length === 0}
+						className="bg-blue-600 text-white px-6 md:px-8 py-2.5 md:py-3 rounded-md text-sm md:text-base font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+					>
+						{submitting ? "Submitting..." : "Submit Picks"}
+					</button>
+				</div>
+			)}
 		</div>
 	)
 }

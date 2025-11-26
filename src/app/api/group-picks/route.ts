@@ -106,14 +106,14 @@ async function batchRecalculateScores(
  * Optimized with parallel requests
  */
 async function syncGameOddsForWeek(
-	supabase: ReturnType<typeof createClient>,
+	supabase: ReturnType<typeof createClient> | any,
 	season: number,
 	week: number
 ): Promise<void> {
 	// Fetch all games for this week that have espn_id
 	const { data: games, error: gamesError } = await supabase
 		.from("games")
-		.select("id, espn_id, spread")
+		.select("id, espn_id, spread, status")
 		.eq("season", season.toString())
 		.eq("week", week)
 		.not("espn_id", "is", null)
@@ -127,21 +127,22 @@ async function syncGameOddsForWeek(
 		return
 	}
 
-	// Only sync games without spread data (skip if all have spread)
-	const gamesWithoutSpread = games.filter(g => !g.spread && g.espn_id)
+	// Sync odds only for games that are not completed (scheduled, live, in progress)
+	// Completed games (status "final") don't need odds updates
+	const gamesToSync = games.filter(g => g.espn_id && g.status !== "final")
 	
-	if (gamesWithoutSpread.length === 0) {
-		return // All games already have spread data
+	if (gamesToSync.length === 0) {
+		return // No games to sync
 	}
 
-	console.log(`Syncing odds for ${gamesWithoutSpread.length} games...`)
+	console.log(`Syncing odds for ${gamesToSync.length} games...`)
 
 	// Sync odds in parallel with rate limiting (batch of 5 at a time)
 	const batchSize = 5
 	const updates: Array<{ gameId: string; spread?: number | null; over_under?: number | null }> = []
 
-	for (let i = 0; i < gamesWithoutSpread.length; i += batchSize) {
-		const batch = gamesWithoutSpread.slice(i, i + batchSize)
+	for (let i = 0; i < gamesToSync.length; i += batchSize) {
+		const batch = gamesToSync.slice(i, i + batchSize)
 		
 		// Fetch odds for batch in parallel
 		const oddsPromises = batch.map(async (game) => {
@@ -179,7 +180,7 @@ async function syncGameOddsForWeek(
 		})
 
 		// Small delay between batches to avoid rate limiting
-		if (i + batchSize < gamesWithoutSpread.length) {
+		if (i + batchSize < gamesToSync.length) {
 			await new Promise((resolve) => setTimeout(resolve, 100))
 		}
 	}
@@ -540,14 +541,27 @@ export async function GET(request: NextRequest) {
 		// Check if week is complete (all games are final)
 		const allGamesFinal = games && games.length > 0 && games.every(game => game.status === "final")
 		
-		// For current week, sync odds if games are missing spread data
+		// For current week, always sync odds (they can change)
 		// For past weeks, skip odds syncing (too slow, data should already be there)
-		if (isCurrentWeek && games) {
-			const gamesMissingSpread = games.some(game => !game.spread && game.espn_id)
+		if (isCurrentWeek && games && games.some(game => game.espn_id)) {
+			// Sync odds in background (don't wait for it)
+			// Use service role client to ensure we can update games
+			const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+			const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 			
-			if (gamesMissingSpread) {
-				// Sync odds in background (don't wait for it)
-				syncGameOddsForWeek(supabase as any, parseInt(season), weekNumber).catch(error => {
+			if (supabaseUrl && supabaseServiceKey) {
+				const { createClient: createSupabaseClient } = await import("@supabase/supabase-js")
+				const serviceSupabase = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
+					auth: {
+						autoRefreshToken: false,
+						persistSession: false,
+					},
+					db: {
+						schema: 'pickem'
+					}
+				})
+				
+				syncGameOddsForWeek(serviceSupabase, parseInt(season), weekNumber).catch(error => {
 					console.error("Error syncing odds (non-fatal):", error)
 				})
 			}
