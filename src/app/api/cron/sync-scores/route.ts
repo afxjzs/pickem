@@ -11,7 +11,7 @@ import { espnAPI } from "@/lib/api/espn"
  * Check if there are active games (live or scheduled within 4 hours)
  */
 async function hasActiveGames(
-	supabase: ReturnType<typeof createClient>,
+	supabase: any,
 	season: string,
 	week: number
 ): Promise<boolean> {

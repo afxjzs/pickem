@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
 				.eq("week", weekNumber)
 
 			// Check if all games are final with scores (week is complete)
-			isWeekComplete =
+			isWeekComplete = Boolean(
 				dbGames &&
 				dbGames.length > 0 &&
 				dbGames.every(
@@ -60,6 +60,7 @@ export async function GET(request: NextRequest) {
 						game.home_score !== null &&
 						game.away_score !== null
 				)
+			)
 		}
 
 		// Trigger background sync check (don't await - non-blocking)

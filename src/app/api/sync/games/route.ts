@@ -22,7 +22,7 @@ interface SyncOptions {
  * Check if there are active games (live or scheduled within 4 hours)
  */
 async function hasActiveGames(
-	supabase: ReturnType<typeof createClient>,
+	supabase: any,
 	season: string,
 	week: number
 ): Promise<boolean> {
@@ -52,7 +52,7 @@ async function hasActiveGames(
  * Check if any games are scheduled more than 12 days out
  */
 async function hasGamesScheduledFarOut(
-	supabase: ReturnType<typeof createClient>,
+	supabase: any,
 	season: string
 ): Promise<boolean> {
 	const now = new Date()
@@ -78,7 +78,7 @@ async function hasGamesScheduledFarOut(
  * Check if week is complete (all games final with scores)
  */
 async function isWeekComplete(
-	supabase: ReturnType<typeof createClient>,
+	supabase: any,
 	season: string,
 	week: number
 ): Promise<boolean> {
@@ -93,7 +93,7 @@ async function isWeekComplete(
 	}
 
 	return games.every(
-		(game) =>
+		(game: { status: string; home_score: number | null; away_score: number | null }) =>
 			game.status === "final" &&
 			game.home_score !== null &&
 			game.away_score !== null
@@ -106,7 +106,7 @@ async function isWeekComplete(
 async function syncGamesFromESPN(
 	season: number,
 	week: number,
-	supabase: ReturnType<typeof createClient>
+	supabase: any
 ): Promise<void> {
 	try {
 		console.log(`🔄 Syncing games from ESPN for season ${season}, week ${week}`)
@@ -132,7 +132,7 @@ async function syncGamesFromESPN(
 async function syncOddsForWeek(
 	season: number,
 	week: number,
-	supabase: ReturnType<typeof createClient>
+	supabase: any
 ): Promise<void> {
 		try {
 			// Check last odds sync time (don't sync more than once per hour)

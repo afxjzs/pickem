@@ -12,7 +12,7 @@ import { getLastSyncTime } from "@/lib/utils/sync-status"
  * Get last odds sync time for a week
  */
 async function getLastOddsSyncTime(
-	supabase: ReturnType<typeof createClient>,
+	supabase: any,
 	season: string,
 	week: number
 ): Promise<Date | null> {
@@ -23,12 +23,12 @@ async function getLastOddsSyncTime(
 		.eq("key", key)
 		.single()
 
-	if (error || !data) {
+	if (error || !data || !data.value) {
 		return null
 	}
 
 	try {
-		return new Date(data.value)
+		return new Date(data.value as string)
 	} catch {
 		return null
 	}

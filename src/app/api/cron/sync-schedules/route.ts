@@ -11,7 +11,7 @@ import { espnAPI } from "@/lib/api/espn"
  * Check if any games are scheduled more than 12 days out
  */
 async function hasGamesScheduledFarOut(
-	supabase: ReturnType<typeof createClient>,
+	supabase: any,
 	season: string
 ): Promise<boolean> {
 	const now = new Date()
