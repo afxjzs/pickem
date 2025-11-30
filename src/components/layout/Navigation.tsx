@@ -2,6 +2,7 @@
 
 import { memo, useState, useEffect } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useAuth } from "@/lib/contexts/AuthContext"
 import { useRouter } from "next/navigation"
 import { usePathname } from "next/navigation"
@@ -90,9 +91,15 @@ function Navigation() {
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 				<div className="flex justify-between items-center py-4 md:py-6">
 					<div className="flex items-center space-x-4 md:space-x-8">
-						<h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-							Pick'em
-						</h1>
+						<Link href="/" className="flex items-center">
+							<Image
+								src="/assets/pickmonster-word-logo.svg"
+								alt="PickMonster"
+								width={140}
+								height={32}
+								className="h-6 md:h-8 w-auto"
+							/>
+						</Link>
 						{/* Desktop Navigation - Hidden on mobile */}
 						{loading ? (
 							// Show loading state for nav items
@@ -108,8 +115,8 @@ function Navigation() {
 									href="/dashboard"
 									className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
 										isActive("/dashboard")
-											? "bg-gray-100 text-gray-900"
-											: "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+											? "bg-[#4580BC]/10 text-[#4580BC]"
+											: "text-gray-600 hover:text-[#4580BC] hover:bg-[#4580BC]/5"
 									}`}
 								>
 									Dashboard
@@ -118,8 +125,8 @@ function Navigation() {
 									href="/picks/current"
 									className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
 										isActive("/picks")
-											? "bg-gray-100 text-gray-900"
-											: "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+											? "bg-[#4580BC]/10 text-[#4580BC]"
+											: "text-gray-600 hover:text-[#4580BC] hover:bg-[#4580BC]/5"
 									}`}
 								>
 									My Picks
@@ -128,8 +135,8 @@ function Navigation() {
 									href="/leaderboard/weeks"
 									className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
 										isActive("/leaderboard/weeks")
-											? "bg-gray-100 text-gray-900"
-											: "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+											? "bg-[#4580BC]/10 text-[#4580BC]"
+											: "text-gray-600 hover:text-[#4580BC] hover:bg-[#4580BC]/5"
 									}`}
 								>
 									Weeks
@@ -138,8 +145,8 @@ function Navigation() {
 									href="/leaderboard/standings"
 									className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
 										isActive("/leaderboard/standings")
-											? "bg-gray-100 text-gray-900"
-											: "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+											? "bg-[#4580BC]/10 text-[#4580BC]"
+											: "text-gray-600 hover:text-[#4580BC] hover:bg-[#4580BC]/5"
 									}`}
 								>
 									Standings
@@ -148,8 +155,8 @@ function Navigation() {
 									href="/group-picks/current-week"
 									className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
 										isActive("/group-picks")
-											? "bg-gray-100 text-gray-900"
-											: "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+											? "bg-[#4580BC]/10 text-[#4580BC]"
+											: "text-gray-600 hover:text-[#4580BC] hover:bg-[#4580BC]/5"
 									}`}
 								>
 									Group Picks

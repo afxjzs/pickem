@@ -956,7 +956,7 @@ function PicksPageContent() {
 			<div className="min-h-screen bg-gray-50 py-8">
 				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 					<div className="text-center">
-						<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+						<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4580BC] mx-auto"></div>
 						<p className="mt-4 text-gray-600">Loading...</p>
 					</div>
 				</div>
@@ -984,7 +984,7 @@ function PicksPageContent() {
 			<div className="min-h-screen bg-gray-50 py-8">
 				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 					<div className="text-center">
-						<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+						<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4580BC] mx-auto"></div>
 						<p className="mt-4 text-gray-600">Loading games...</p>
 					</div>
 				</div>
@@ -996,11 +996,11 @@ function PicksPageContent() {
 	const weekOptions = Array.from({ length: 18 }, (_, i) => i + 1)
 
 	return (
-		<div className="min-h-screen bg-gray-50">
+		<div className="min-h-screen" style={{ backgroundColor: '#4580BC' }}>
 			{/* Header with padding */}
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
 				<div className="mb-4 md:mb-8">
-					<h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">
+					<h1 className="text-2xl md:text-3xl font-galindo text-white mb-2 md:mb-4">
 						Make Your Picks
 					</h1>
 					<p className="text-sm md:text-base text-gray-600 mb-4 md:mb-6">
@@ -1032,8 +1032,8 @@ function PicksPageContent() {
 							<div
 								className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium ${
 									isComplete
-										? "bg-green-100 text-green-800"
-										: "bg-gray-100 text-gray-800"
+										? "bg-[#10B981] text-white border-2 border-[#10B981] shadow-md"
+										: "bg-[#E9932D] text-white border-2 border-[#E9932D] shadow-md"
 								}`}
 							>
 								Picks: {isComplete ? "Complete" : "Incomplete"}
@@ -1061,7 +1061,7 @@ function PicksPageContent() {
 										handleWeekChange(newWeek)
 									}
 								}}
-								className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm md:text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+								className="w-full bg-white border-2 border-gray-300 rounded-md px-3 py-2 text-sm md:text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#4580BC] focus:border-[#4580BC] transition-colors"
 							>
 								{weekOptions.map((w) => (
 									<option key={w} value={w}>
@@ -1076,12 +1076,12 @@ function PicksPageContent() {
 					{/* Message */}
 					{message && (
 						<div
-							className={`p-4 rounded-md mb-6 ${
+							className={`p-4 rounded-md mb-6 border-2 ${
 								message.type === "success"
-									? "bg-green-50 text-green-800 border border-green-200"
+									? "bg-[#10B981]/10 text-[#10B981] border-[#10B981]"
 									: message.type === "error"
-									? "bg-red-50 text-red-800 border border-red-200"
-									: "bg-blue-50 text-blue-800 border border-blue-200"
+									? "bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]"
+									: "bg-[#4580BC]/10 text-[#4580BC] border-[#4580BC]"
 							}`}
 						>
 							{message.text}
@@ -1090,19 +1090,19 @@ function PicksPageContent() {
 
 					{/* Debug Panel - Only show if there's debug info */}
 					{debugInfo && (
-						<div className="mb-6 p-4 bg-yellow-50 border-2 border-yellow-400 rounded-md">
+						<div className="mb-6 p-4 bg-[#E9932D]/10 border-2 border-[#E9932D] rounded-md">
 							<div className="mb-3 flex items-center justify-between">
-								<h3 className="font-bold text-yellow-900 text-lg">
+								<h3 className="font-bold text-[#E9932D] text-lg">
 									🔍 Debug Info
 								</h3>
 								<button
 									onClick={() => setDebugInfo(null)}
-									className="text-sm text-yellow-700 hover:text-yellow-900 underline font-semibold"
+									className="text-sm text-[#E9932D] hover:text-[#E9932D] underline font-semibold"
 								>
 									✕ Clear
 								</button>
 							</div>
-							<div className="bg-white p-4 rounded border-2 border-yellow-300">
+							<div className="bg-white p-4 rounded border-2 border-[#E9932D]/50">
 								<div className="mb-4">
 									<h4 className="font-semibold text-gray-900 mb-2">
 										Authentication Status:
@@ -1208,8 +1208,12 @@ function PicksPageContent() {
 								: null
 
 						// Determine if user's pick was correct
+						// Only mark as correct/incorrect if game is final (completed)
+						// Locked or in-progress games should not show red/green - they should show blue
+						// Explicitly check: if game is locked OR live (in-progress), pickCorrect should be null
+						const isLockedOrInProgress = isLocked || game.status === "live"
 						const pickCorrect =
-							userPick?.pickedTeam && winningTeam
+							!isLockedOrInProgress && isCompleted && userPick?.pickedTeam && winningTeam
 								? userPick.pickedTeam === winningTeam
 								: null
 
@@ -1239,7 +1243,7 @@ function PicksPageContent() {
 									) : (
 										<>
 											{userPick?.saving && (
-												<div className="animate-spin rounded-full h-5 w-5 md:h-6 md:w-6 border-b-2 border-blue-600"></div>
+												<div className="animate-spin rounded-full h-5 w-5 md:h-6 md:w-6 border-b-2 border-[#4580BC]"></div>
 											)}
 											{!userPick?.saving &&
 												(() => {
@@ -1251,7 +1255,7 @@ function PicksPageContent() {
 													if (isComplete && userPick?.saved) {
 														// Complete and saved - green checkmark
 														return (
-															<div className="text-green-600">
+															<div className="text-[#10B981]">
 																<svg
 																	className="w-5 h-5 md:w-6 md:h-6"
 																	fill="currentColor"
@@ -1272,7 +1276,7 @@ function PicksPageContent() {
 													) {
 														// Incomplete - yellow warning icon (circle with horizontal bar/minus)
 														return (
-															<div className="text-yellow-600">
+															<div className="text-[#E9932D]">
 																<svg
 																	className="w-5 h-5 md:w-6 md:h-6"
 																	fill="currentColor"
@@ -1334,11 +1338,11 @@ function PicksPageContent() {
 												className={`flex items-center space-x-2 p-2 md:p-2.5 rounded border-2 transition-all flex-1 ${
 													userPick?.pickedTeam === game.away_team
 														? pickCorrect === true
-															? "border-green-500 bg-green-50"
+															? "border-[#10B981] bg-[#10B981]/10"
 															: pickCorrect === false
-															? "border-red-500 bg-red-50"
-															: "border-blue-500 bg-blue-50"
-														: "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+															? "border-[#EF4444] bg-[#EF4444]/10"
+															: "border-[#4580BC] bg-[#4580BC]/10"
+														: "border-gray-200 bg-white hover:border-[#4580BC] hover:bg-[#4580BC]/5"
 												} ${
 													isCompleted ? "opacity-75 cursor-not-allowed" : ""
 												}`}
@@ -1381,11 +1385,11 @@ function PicksPageContent() {
 												className={`flex items-center space-x-2 p-2 md:p-2.5 rounded border-2 transition-all flex-1 ${
 													userPick?.pickedTeam === game.home_team
 														? pickCorrect === true
-															? "border-green-500 bg-green-50"
+															? "border-[#10B981] bg-[#10B981]/10"
 															: pickCorrect === false
-															? "border-red-500 bg-red-50"
-															: "border-blue-500 bg-blue-50"
-														: "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+															? "border-[#EF4444] bg-[#EF4444]/10"
+															: "border-[#4580BC] bg-[#4580BC]/10"
+														: "border-gray-200 bg-white hover:border-[#4580BC] hover:bg-[#4580BC]/5"
 												} ${
 													isCompleted ? "opacity-75 cursor-not-allowed" : ""
 												}`}
@@ -1423,10 +1427,10 @@ function PicksPageContent() {
 												className={`flex items-center space-x-2 p-2 md:p-2.5 rounded border-2 flex-1 ${
 													userPick?.pickedTeam === game.away_team
 														? pickCorrect === true
-															? "border-green-500 bg-green-50"
+															? "border-[#10B981] bg-[#10B981]/10"
 															: pickCorrect === false
-															? "border-red-500 bg-red-50"
-															: "border-gray-200 bg-gray-50"
+															? "border-[#EF4444] bg-[#EF4444]/10"
+															: "border-[#7D1D3F] bg-[#7D1D3F]/10"
 														: "border-gray-200 bg-gray-50 opacity-60"
 												}`}
 											>
@@ -1463,10 +1467,10 @@ function PicksPageContent() {
 												className={`flex items-center space-x-2 p-2 md:p-2.5 rounded border-2 flex-1 ${
 													userPick?.pickedTeam === game.home_team
 														? pickCorrect === true
-															? "border-green-500 bg-green-50"
+															? "border-[#10B981] bg-[#10B981]/10"
 															: pickCorrect === false
-															? "border-red-500 bg-red-50"
-															: "border-gray-200 bg-gray-50"
+															? "border-[#EF4444] bg-[#EF4444]/10"
+															: "border-[#7D1D3F] bg-[#7D1D3F]/10"
 														: "border-gray-200 bg-gray-50 opacity-60"
 												}`}
 											>
@@ -1597,14 +1601,14 @@ function PicksPageContent() {
 													disabled={isDisabled}
 													className={`px-2.5 py-1 md:px-3 md:py-1.5 rounded text-xs md:text-sm font-medium transition-all ${
 														isCurrent
-															? "bg-blue-600 text-white shadow-md border-2 border-blue-600"
+															? "bg-[#265387] text-white shadow-md border-2 border-[#265387]"
 															: wasJustCleared
-															? "bg-red-500 text-white border-2 border-red-600"
+															? "bg-[#EF4444] text-white border-2 border-[#EF4444]"
 															: isUsed && usedByLockedGame
 															? "bg-gray-200 text-gray-500 border-2 border-gray-200 opacity-50 cursor-not-allowed"
 															: isUsed && !usedByLockedGame
 															? "bg-gray-200 text-gray-500 hover:bg-gray-300 border-2 border-gray-200"
-															: "bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50"
+															: "bg-white text-gray-700 border-2 border-gray-300 hover:border-[#4580BC] hover:bg-[#4580BC]/10"
 													} ${
 														isDisabled ? "opacity-75 cursor-not-allowed" : ""
 													}`}
@@ -1632,11 +1636,11 @@ function PicksPageContent() {
 
 			{/* Submit Button */}
 			{filteredGames.length > 0 && (
-				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 md:mt-6 text-center">
+				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 md:mt-6 mb-8 md:mb-12 text-center">
 					<button
 						onClick={submitPicks}
 						disabled={submitting || filteredGames.length === 0}
-						className="bg-blue-600 text-white px-6 md:px-8 py-2.5 md:py-3 rounded-md text-sm md:text-base font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+						className="bg-[#265387] text-white px-6 md:px-8 py-2.5 md:py-3 rounded-md text-sm md:text-base font-medium hover:bg-[#1a3d6b] focus:outline-none focus:ring-2 focus:ring-[#265387] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 					>
 						{submitting ? "Submitting..." : "Submit Picks"}
 					</button>
@@ -1653,7 +1657,7 @@ export default function PicksPage() {
 				<div className="min-h-screen bg-gray-50 py-8">
 					<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 						<div className="text-center">
-							<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+							<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4580BC] mx-auto"></div>
 							<p className="mt-4 text-gray-600">Loading picks...</p>
 						</div>
 					</div>

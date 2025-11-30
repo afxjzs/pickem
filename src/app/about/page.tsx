@@ -1,10 +1,10 @@
 export default function AboutPage() {
 	return (
-		<div className="min-h-screen bg-gray-50">
+		<div className="min-h-screen" style={{ backgroundColor: '#4580BC' }}>
 			<main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
 				<div className="px-4 py-6 sm:px-0">
-					<div className="bg-white rounded-lg shadow p-6 md:p-8 border border-gray-200">
-						<h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+					<div className="bg-white rounded-lg shadow-lg p-6 md:p-8 border border-gray-200">
+						<h1 className="text-3xl md:text-4xl font-galindo text-white mb-6">
 							About PickMonster
 						</h1>
 						<div className="prose prose-gray max-w-none">
@@ -38,7 +38,7 @@ export default function AboutPage() {
 								using it as much as I enjoyed building it.
 							</p>
 							<div className="mt-8 pt-6 border-t border-gray-200">
-								<h2 className="text-xl font-semibold text-gray-900 mb-4">
+								<h2 className="text-xl font-galindo text-white mb-4">
 									Let's Connect
 								</h2>
 								<p className="text-gray-600 mb-4">
@@ -50,7 +50,7 @@ export default function AboutPage() {
 										href="https://github.com/afxjzs"
 										target="_blank"
 										rel="noopener noreferrer"
-										className="text-blue-600 hover:text-blue-700 transition-colors"
+										className="text-[#4580BC] hover:text-[#265387] transition-colors"
 									>
 										GitHub
 									</a>
@@ -58,7 +58,7 @@ export default function AboutPage() {
 										href="https://linkedin.com/in/douglasrogers"
 										target="_blank"
 										rel="noopener noreferrer"
-										className="text-blue-600 hover:text-blue-700 transition-colors"
+										className="text-[#4580BC] hover:text-[#265387] transition-colors"
 									>
 										LinkedIn
 									</a>
@@ -66,7 +66,7 @@ export default function AboutPage() {
 										href="https://doug.is"
 										target="_blank"
 										rel="noopener noreferrer"
-										className="text-blue-600 hover:text-blue-700 transition-colors"
+										className="text-[#4580BC] hover:text-[#265387] transition-colors"
 									>
 										doug.is
 									</a>

@@ -234,14 +234,14 @@ export default function GroupPicksPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-50 py-4 md:py-8">
+		<div className="min-h-screen py-4 md:py-8" style={{ backgroundColor: '#4580BC' }}>
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 				{/* Header */}
 				<div className="mb-4 md:mb-8">
-					<h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">
+					<h1 className="text-2xl md:text-3xl font-galindo text-white mb-2 md:mb-4">
 						Group Picks
 					</h1>
-					<p className="text-sm md:text-base text-gray-600 mb-4 md:mb-6">
+					<p className="text-sm md:text-base text-white/80 mb-4 md:mb-6">
 						Season {season}
 					</p>
 
@@ -257,8 +257,8 @@ export default function GroupPicksPage() {
 									onClick={() => handleGroupPicksWeekChange(weekNum)}
 									className={`px-2 md:px-3 py-1 rounded-md text-xs md:text-sm font-medium transition-colors ${
 										groupPicksWeek === weekNum
-											? "bg-blue-600 text-white"
-											: "bg-gray-100 text-gray-700 hover:bg-gray-200"
+											? "bg-[#4580BC] text-white"
+											: "bg-white/80 text-gray-700 hover:bg-white"
 									}`}
 								>
 									{weekNum}
@@ -286,11 +286,11 @@ export default function GroupPicksPage() {
 				) : groupPicksData && groupPicksData.games.length > 0 ? (
 					<div className="bg-white rounded-lg shadow overflow-hidden">
 						<div className="overflow-x-auto">
-							<table className="min-w-full divide-y divide-gray-200">
+							<table className="min-w-full divide-y divide-gray-200" style={{ tableLayout: 'fixed' }}>
 								<thead className="bg-gray-50">
 									{/* Game Header Row */}
 									<tr>
-										<th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10 border-r border-gray-200 min-w-[100px]">
+										<th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10 border-r border-gray-200" style={{ width: '110px', minWidth: '110px', maxWidth: '110px' }}>
 											Team Name
 										</th>
 										{groupPicksData.games.map((game) => (
@@ -311,7 +311,7 @@ export default function GroupPicksPage() {
 									</tr>
 									{/* Favored Row */}
 									<tr className="bg-gray-100">
-										<td className="px-2 md:px-4 py-1.5 md:py-2 text-xs font-medium text-gray-600 sticky left-0 bg-gray-100 z-10 border-r border-gray-200">
+										<td className="px-2 md:px-4 py-1.5 md:py-2 text-xs font-medium text-gray-600 sticky left-0 bg-gray-100 z-10 border-r border-gray-200" style={{ width: '110px', minWidth: '110px', maxWidth: '110px' }}>
 											Favored
 										</td>
 										{groupPicksData.games.map((game) => {
@@ -329,7 +329,7 @@ export default function GroupPicksPage() {
 									</tr>
 									{/* Spread Row */}
 									<tr className="bg-gray-100">
-										<td className="px-2 md:px-4 py-1.5 md:py-2 text-xs font-medium text-gray-600 sticky left-0 bg-gray-100 z-10 border-r border-gray-200">
+										<td className="px-2 md:px-4 py-1.5 md:py-2 text-xs font-medium text-gray-600 sticky left-0 bg-gray-100 z-10 border-r border-gray-200" style={{ width: '110px', minWidth: '110px', maxWidth: '110px' }}>
 											Spread
 										</td>
 										{groupPicksData.games.map((game) => {
@@ -349,7 +349,7 @@ export default function GroupPicksPage() {
 									</tr>
 									{/* Underdog Row */}
 									<tr className="bg-gray-100">
-										<td className="px-2 md:px-4 py-1.5 md:py-2 text-xs font-medium text-gray-600 sticky left-0 bg-gray-100 z-10 border-r border-gray-200">
+										<td className="px-2 md:px-4 py-1.5 md:py-2 text-xs font-medium text-gray-600 sticky left-0 bg-gray-100 z-10 border-r border-gray-200" style={{ width: '110px', minWidth: '110px', maxWidth: '110px' }}>
 											Underdog
 										</td>
 										{groupPicksData.games.map((game) => {
@@ -373,7 +373,7 @@ export default function GroupPicksPage() {
 									</tr>
 									{/* Score Row - Show scores for live/final games */}
 									<tr className="bg-gray-50">
-										<td className="px-2 md:px-4 py-1.5 md:py-2 text-xs font-medium text-gray-600 sticky left-0 bg-gray-50 z-10 border-r border-gray-200">
+										<td className="px-2 md:px-4 py-1.5 md:py-2 text-xs font-medium text-gray-600 sticky left-0 bg-gray-50 z-10 border-r border-gray-200" style={{ width: '110px', minWidth: '110px', maxWidth: '110px' }}>
 											Score
 										</td>
 										{groupPicksData.games.map((game) => {
@@ -417,14 +417,19 @@ export default function GroupPicksPage() {
 										return (
 											<tr
 												key={userPicks.user_id}
-												className={isUser ? "bg-yellow-50" : ""}
 											>
 												<td
-													className={`px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900 sticky left-0 z-10 border-r border-gray-200 ${
-														isUser ? "bg-yellow-50" : "bg-white"
+													className={`px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm text-gray-900 sticky left-0 border-r border-gray-200 bg-white ${
+														isUser ? "font-bold" : "font-medium"
 													}`}
+													style={{ 
+														width: '110px',
+														minWidth: '110px',
+														maxWidth: '110px',
+														zIndex: 20
+													}}
 												>
-													{userPicks.display_name}
+													<div className="pr-2 break-words leading-tight">{userPicks.display_name}</div>
 												</td>
 												{groupPicksData.games.map((game) => {
 													// Current user can always see their own picks
@@ -571,9 +576,7 @@ export default function GroupPicksPage() {
 													)
 												})}
 												<td
-													className={`px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm font-semibold text-gray-900 text-center ${
-														isUser ? "bg-yellow-50" : ""
-													}`}
+													className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm font-semibold text-gray-900 text-center"
 												>
 													{userPicks.weekly_points || 0}
 												</td>

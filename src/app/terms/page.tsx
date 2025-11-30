@@ -1,10 +1,10 @@
 export default function TermsPage() {
 	return (
-		<div className="min-h-screen bg-gray-50">
+		<div className="min-h-screen" style={{ backgroundColor: '#4580BC' }}>
 			<main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
 				<div className="px-4 py-6 sm:px-0">
 					<div className="bg-white rounded-lg shadow p-6 md:p-8 border border-gray-200">
-						<h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+						<h1 className="text-3xl md:text-4xl font-galindo text-white mb-6">
 							Terms of Service
 						</h1>
 						<div className="prose prose-gray max-w-none">

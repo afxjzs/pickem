@@ -80,14 +80,14 @@ export default function MobileBottomNav() {
 							href={item.href}
 							className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
 								active
-									? "text-blue-600"
+									? "text-[#4580BC]"
 									: "text-gray-500"
 							}`}
 						>
-							<div className={`mb-1 ${active ? "text-blue-600" : "text-gray-500"}`}>
+							<div className={`mb-1 ${active ? "text-[#4580BC]" : "text-gray-500"}`}>
 								{item.icon}
 							</div>
-							<span className={`text-xs font-medium ${active ? "text-blue-600" : "text-gray-500"}`}>
+							<span className={`text-xs font-medium ${active ? "text-[#4580BC]" : "text-gray-500"}`}>
 								{item.label}
 							</span>
 						</Link>

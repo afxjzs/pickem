@@ -62,7 +62,7 @@ export default function StandingsDisplay({
 
 	const getRankColor = (rank: number) => {
 		if (rank <= 7) return "text-green-600" // Playoff spots
-		if (rank <= 10) return "text-yellow-600" // In the hunt
+		if (rank <= 10) return "text-[#E9932D]" // In the hunt
 		return "text-gray-600" // Out of contention
 	}
 

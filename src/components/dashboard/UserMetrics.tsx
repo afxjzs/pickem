@@ -87,13 +87,13 @@ export default function UserMetrics({
 
 	return (
 		<div className="bg-white rounded-lg shadow p-4 md:p-6 border border-gray-200">
-			<h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-4 md:mb-6">
+			<h2 className="text-xl md:text-2xl font-galindo text-[#265387] mb-4 md:mb-6">
 				Your Stats
 			</h2>
 			<div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
 				{/* Overall Rank */}
-				<div className="text-center p-4 bg-blue-50 rounded-lg">
-					<div className="text-3xl md:text-4xl font-bold text-blue-600 mb-2">
+				<div className="text-center p-4 bg-[#4580BC]/10 rounded-lg border border-[#4580BC]/20">
+					<div className="text-3xl md:text-4xl font-bold text-[#265387] mb-2">
 						#{userStats.rank}
 					</div>
 					<div className="text-sm md:text-base text-gray-700 font-medium">
@@ -109,8 +109,8 @@ export default function UserMetrics({
 				</div>
 
 				{/* Total Points */}
-				<div className="text-center p-4 bg-purple-50 rounded-lg">
-					<div className="text-3xl md:text-4xl font-bold text-purple-600 mb-2">
+				<div className="text-center p-4 bg-[#265387]/10 rounded-lg border border-[#265387]/20">
+					<div className="text-3xl md:text-4xl font-bold text-[#265387] mb-2">
 						{userStats.total_points}
 					</div>
 					<div className="text-sm md:text-base text-gray-700 font-medium">
@@ -120,8 +120,8 @@ export default function UserMetrics({
 				</div>
 
 				{/* Correct Picks */}
-				<div className="text-center p-4 bg-green-50 rounded-lg">
-					<div className="text-3xl md:text-4xl font-bold text-green-600 mb-2">
+				<div className="text-center p-4 bg-[#10B981]/10 rounded-lg border border-[#10B981]/20">
+					<div className="text-3xl md:text-4xl font-bold text-[#10B981] mb-2">
 						{userStats.correct_picks}/{userStats.total_picks}
 					</div>
 					<div className="text-sm md:text-base text-gray-700 font-medium">
@@ -133,8 +133,8 @@ export default function UserMetrics({
 				</div>
 
 				{/* Average Points */}
-				<div className="text-center p-4 bg-orange-50 rounded-lg">
-					<div className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">
+				<div className="text-center p-4 bg-[#E9932D]/10 rounded-lg border border-[#E9932D]/20">
+					<div className="text-3xl md:text-4xl font-bold text-[#E9932D] mb-2">
 						{userStats.average_points.toFixed(1)}
 					</div>
 					<div className="text-sm md:text-base text-gray-700 font-medium">
@@ -147,8 +147,8 @@ export default function UserMetrics({
 
 				{/* Best Week */}
 				{bestWeek.points > 0 && (
-					<div className="text-center p-4 bg-emerald-50 rounded-lg">
-						<div className="text-3xl md:text-4xl font-bold text-emerald-600 mb-2">
+					<div className="text-center p-4 bg-[#10B981]/10 rounded-lg border border-[#10B981]/20">
+						<div className="text-3xl md:text-4xl font-bold text-[#10B981] mb-2">
 							{bestWeek.points}
 						</div>
 						<div className="text-sm md:text-base text-gray-700 font-medium">
@@ -160,8 +160,8 @@ export default function UserMetrics({
 
 				{/* Worst Week */}
 				{worstWeek.points < Infinity && worstWeek.points > 0 && (
-					<div className="text-center p-4 bg-red-50 rounded-lg">
-						<div className="text-3xl md:text-4xl font-bold text-red-600 mb-2">
+					<div className="text-center p-4 bg-[#EF4444]/10 rounded-lg border border-[#EF4444]/20">
+						<div className="text-3xl md:text-4xl font-bold text-[#EF4444] mb-2">
 							{worstWeek.points}
 						</div>
 						<div className="text-sm md:text-base text-gray-700 font-medium">
@@ -173,8 +173,8 @@ export default function UserMetrics({
 
 				{/* Current Streak */}
 				{currentStreak > 0 && (
-					<div className="text-center p-4 bg-yellow-50 rounded-lg">
-						<div className="text-3xl md:text-4xl font-bold text-yellow-600 mb-2">
+					<div className="text-center p-4 bg-[#E9932D]/10 rounded-lg border border-[#E9932D]/20">
+						<div className="text-3xl md:text-4xl font-bold text-[#E9932D] mb-2">
 							{currentStreak}
 						</div>
 						<div className="text-sm md:text-base text-gray-700 font-medium">

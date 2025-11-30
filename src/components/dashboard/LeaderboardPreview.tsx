@@ -21,10 +21,10 @@ export default function LeaderboardPreview({
 	return (
 		<div className="bg-white rounded-lg shadow p-4 md:p-6 border border-gray-200">
 			<div className="flex items-center justify-between mb-4">
-				<h3 className="text-lg font-semibold text-gray-900">Top Players</h3>
+				<h3 className="text-lg font-galindo text-[#265387]">Top Players</h3>
 				<Link
 					href="/leaderboard/standings"
-					className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+					className="text-sm text-[#4580BC] hover:text-[#265387] font-medium transition-colors"
 				>
 					View All →
 				</Link>
@@ -36,18 +36,18 @@ export default function LeaderboardPreview({
 						<div
 							key={player.user_id}
 							className={`flex items-center justify-between p-2 rounded ${
-								isCurrentUser ? "bg-yellow-50" : "bg-gray-50"
+								isCurrentUser ? "bg-[#E9932D]/10 border border-[#E9932D]/30" : "bg-gray-50"
 							}`}
 						>
 							<div className="flex items-center gap-3">
 								<div
 									className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
 										index === 0
-											? "bg-yellow-400 text-yellow-900"
+											? "bg-[#E9932D] text-white"
 											: index === 1
-											? "bg-gray-300 text-gray-700"
+											? "bg-[#4580BC] text-white"
 											: index === 2
-											? "bg-orange-300 text-orange-900"
+											? "bg-[#265387] text-white"
 											: "bg-gray-200 text-gray-600"
 									}`}
 								>
@@ -55,10 +55,10 @@ export default function LeaderboardPreview({
 								</div>
 								<div>
 									<div className="text-sm font-medium text-gray-900">
-										{player.display_name}
-										{isCurrentUser && (
-											<span className="ml-2 text-xs text-blue-600">(You)</span>
-										)}
+									{player.display_name}
+									{isCurrentUser && (
+										<span className="ml-2 text-xs text-[#4580BC]">(You)</span>
+									)}
 									</div>
 								</div>
 							</div>
@@ -71,14 +71,14 @@ export default function LeaderboardPreview({
 			</div>
 			{currentUserStanding && currentUserStanding.rank > 5 && (
 				<div className="mt-4 pt-4 border-t border-gray-200">
-					<div className="flex items-center justify-between p-2 rounded bg-blue-50">
+					<div className="flex items-center justify-between p-2 rounded bg-[#4580BC]/10 border border-[#4580BC]/20">
 						<div className="flex items-center gap-3">
-							<div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-blue-200 text-blue-900">
+							<div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-[#4580BC] text-white">
 								{currentUserStanding.rank}
 							</div>
 							<div className="text-sm font-medium text-gray-900">
 								{currentUserStanding.display_name}
-								<span className="ml-2 text-xs text-blue-600">(You)</span>
+								<span className="ml-2 text-xs text-[#4580BC]">(You)</span>
 							</div>
 						</div>
 						<div className="text-sm font-semibold text-gray-700">

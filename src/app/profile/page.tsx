@@ -184,8 +184,11 @@ export default function ProfilePage() {
 
 	if (authLoading || loading) {
 		return (
-			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
-				<div className="text-lg">Loading...</div>
+			<div
+				className="min-h-screen flex items-center justify-center"
+				style={{ backgroundColor: "#4580BC" }}
+			>
+				<div className="text-white text-lg">Loading...</div>
 			</div>
 		)
 	}
@@ -202,31 +205,34 @@ export default function ProfilePage() {
 		!isCheckingUsername
 
 	return (
-		<div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+		<div
+			className="min-h-screen py-12 px-4 sm:px-6 lg:px-8"
+			style={{ backgroundColor: "#4580BC" }}
+		>
 			<div className="max-w-2xl mx-auto">
 				<div className="mb-6">
 					<Link
 						href="/dashboard"
-						className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+						className="text-white hover:text-white/80 text-sm font-medium"
 					>
 						← Back to Dashboard
 					</Link>
 				</div>
 
-				<div className="bg-white rounded-lg shadow-sm p-8">
-					<h1 className="text-2xl font-bold text-gray-900 mb-6">
+				<div className="bg-white rounded-lg shadow-lg p-8">
+					<h1 className="text-2xl font-galindo text-white mb-6">
 						Edit Profile
 					</h1>
 
 					{error && (
-						<div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
-							<div className="text-sm text-red-600">{error}</div>
+						<div className="mb-6 bg-[#EF4444]/10 border-2 border-[#EF4444] rounded-md p-4">
+							<div className="text-sm text-[#EF4444]">{error}</div>
 						</div>
 					)}
 
 					{success && (
-						<div className="mb-6 bg-green-50 border border-green-200 rounded-md p-4">
-							<div className="text-sm text-green-600">{success}</div>
+						<div className="mb-6 bg-[#10B981]/10 border-2 border-[#10B981] rounded-md p-4">
+							<div className="text-sm text-[#10B981]">{success}</div>
 						</div>
 					)}
 
@@ -263,7 +269,7 @@ export default function ProfilePage() {
 								required
 								value={firstName}
 								onChange={(e) => setFirstName(e.target.value)}
-								className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+								className="w-full px-3 py-2 border-2 border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-[#4580BC] focus:border-[#4580BC]"
 								placeholder="Tom"
 							/>
 						</div>
@@ -281,7 +287,7 @@ export default function ProfilePage() {
 								required
 								value={lastName}
 								onChange={(e) => setLastName(e.target.value)}
-								className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+								className="w-full px-3 py-2 border-2 border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-[#4580BC] focus:border-[#4580BC]"
 								placeholder="Brady"
 							/>
 						</div>
@@ -299,7 +305,7 @@ export default function ProfilePage() {
 								required
 								value={username}
 								onChange={(e) => setUsername(e.target.value.toLowerCase())}
-								className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+								className="w-full px-3 py-2 border-2 border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-[#4580BC] focus:border-[#4580BC]"
 								placeholder="the_goat"
 							/>
 							{isCheckingUsername && (
@@ -336,7 +342,7 @@ export default function ProfilePage() {
 								type="url"
 								value={avatarUrl}
 								onChange={(e) => setAvatarUrl(e.target.value)}
-								className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+								className="w-full px-3 py-2 border-2 border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-[#4580BC] focus:border-[#4580BC]"
 								placeholder="https://example.com/avatar.jpg"
 							/>
 							<p className="mt-1 text-sm text-gray-600">
@@ -347,14 +353,14 @@ export default function ProfilePage() {
 						<div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
 							<Link
 								href="/dashboard"
-								className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+								className="px-6 py-2 border-2 border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4580BC]"
 							>
 								Cancel
 							</Link>
 							<button
 								type="submit"
 								disabled={!isFormValid || saving}
-								className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+								className="px-6 py-2 bg-[#4580BC] text-white rounded-md hover:bg-[#265387] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4580BC] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 							>
 								{saving ? "Saving..." : "Save Changes"}
 							</button>

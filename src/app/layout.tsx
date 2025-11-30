@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Geist, Geist_Mono, Galindo } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "@/lib/contexts/AuthContext"
 import Navigation from "@/components/layout/Navigation"
@@ -16,6 +16,12 @@ const geistMono = Geist_Mono({
 	subsets: ["latin"],
 })
 
+const galindo = Galindo({
+	variable: "--font-galindo",
+	subsets: ["latin"],
+	weight: "400",
+})
+
 export const metadata: Metadata = {
 	title: "Pick'em - NFL Fantasy Picks",
 	description:
@@ -29,9 +35,10 @@ export default function RootLayout({
 }) {
 	return (
 		<html lang="en">
-			<body
-				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-			>
+		<body
+			className={`${geistSans.variable} ${geistMono.variable} ${galindo.variable} antialiased`}
+			style={{ backgroundColor: '#4580BC' }}
+		>
 			<AuthProvider>
 				<Navigation />
 				<div className="pb-16 md:pb-0 min-h-screen flex flex-col">

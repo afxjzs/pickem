@@ -75,17 +75,17 @@ export function SignUpForm() {
 	const isFormDisabled = loading || isSubmitting
 
 	return (
-		<div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-			<div className="max-w-md w-full space-y-8">
+		<div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: '#4580BC' }}>
+			<div className="max-w-md w-full space-y-8 bg-white rounded-lg shadow-lg p-8">
 				<div>
-					<h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+					<h2 className="mt-6 text-center text-3xl font-galindo text-[#265387]">
 						Create your account
 					</h2>
 					<p className="mt-2 text-center text-sm text-gray-600">
 						Or{" "}
 						<Link
 							href="/signin"
-							className="font-medium text-blue-600 hover:text-blue-500"
+							className="font-medium text-[#4580BC] hover:text-[#265387]"
 						>
 							sign in to your existing account
 						</Link>
@@ -93,14 +93,14 @@ export function SignUpForm() {
 				</div>
 
 				{error && (
-					<div className="bg-red-50 border border-red-200 rounded-md p-4">
-						<div className="text-sm text-red-600">{error}</div>
+					<div className="bg-[#EF4444]/10 border-2 border-[#EF4444] rounded-md p-4">
+						<div className="text-sm text-[#EF4444]">{error}</div>
 					</div>
 				)}
 
 				{success && (
-					<div className="bg-green-50 border border-green-200 rounded-md p-4">
-						<div className="text-sm text-green-600">{success}</div>
+					<div className="bg-[#10B981]/10 border-2 border-[#10B981] rounded-md p-4">
+						<div className="text-sm text-[#10B981]">{success}</div>
 					</div>
 				)}
 
@@ -116,7 +116,7 @@ export function SignUpForm() {
 								type="email"
 								autoComplete="email"
 								required
-								className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+								className="appearance-none rounded-none relative block w-full px-3 py-2 border-2 border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-[#4580BC] focus:border-[#4580BC] focus:z-10 sm:text-sm"
 								placeholder="Email address"
 								value={email}
 								onChange={(e) => setEmail(e.target.value)}
@@ -133,7 +133,7 @@ export function SignUpForm() {
 								type="password"
 								autoComplete="new-password"
 								required
-								className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+								className="appearance-none rounded-none relative block w-full px-3 py-2 border-2 border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-[#4580BC] focus:border-[#4580BC] focus:z-10 sm:text-sm"
 								placeholder="Password"
 								value={password}
 								onChange={(e) => setPassword(e.target.value)}
@@ -146,7 +146,7 @@ export function SignUpForm() {
 						<button
 							type="submit"
 							disabled={isFormDisabled}
-							className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+							className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-[#4580BC] hover:bg-[#265387] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4580BC] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 						>
 							{isSubmitting ? "Creating account..." : "Sign up"}
 						</button>

@@ -91,21 +91,21 @@ function WeeksContent() {
 
 	if (authLoading || checkingOnboarding) {
 		return (
-			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
+			<div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#4580BC' }}>
 				<div className="text-center">
-					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-					<p className="mt-4 text-gray-600">Loading...</p>
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
+					<p className="mt-4 text-white">Loading...</p>
 				</div>
 			</div>
 		)
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-50">
+		<div className="min-h-screen" style={{ backgroundColor: '#4580BC' }}>
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
 				{/* Header */}
 				<div className="mb-4 md:mb-6">
-					<h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Weekly Performance</h1>
+					<h1 className="text-2xl md:text-3xl font-galindo text-white mb-2">Weekly Performance</h1>
 					<p className="text-sm md:text-base text-gray-600">Season {season}</p>
 				</div>
 
@@ -146,15 +146,15 @@ function WeeksContent() {
 										return (
 											<tr
 												key={userData.user_id}
-												className={isUser ? "bg-yellow-50" : ""}
+												className={isUser ? "bg-[#E9932D]/10" : ""}
 											>
 												<td className={`px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900 sticky left-0 z-10 border-r border-gray-200 ${
-													isUser ? "bg-yellow-50" : "bg-white"
+													isUser ? "bg-[#E9932D]/10" : "bg-white"
 												}`}>
 													{userData.rank}
 												</td>
 												<td className={`px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900 sticky left-12 md:left-16 z-10 border-r border-gray-200 ${
-													isUser ? "bg-yellow-50" : "bg-white"
+													isUser ? "bg-[#E9932D]/10" : "bg-white"
 												}`}>
 													{userData.display_name}
 												</td>

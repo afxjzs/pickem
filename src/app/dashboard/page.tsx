@@ -145,7 +145,7 @@ export default function DashboardPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-50">
+		<div className="min-h-screen" style={{ backgroundColor: '#4580BC' }}>
 			<main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
 				<div className="px-4 py-6 sm:px-0">
 					{/* Status Cards - Top Section */}
@@ -169,8 +169,8 @@ export default function DashboardPage() {
 												flex-1 py-4 px-6 text-center text-sm font-medium transition-colors
 												${
 													activeChartTab === "cumulative"
-														? "text-blue-600 border-b-2 border-blue-600"
-														: "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+														? "text-[#4580BC] border-b-2 border-[#4580BC] font-galindo"
+														: "text-gray-500 hover:text-[#4580BC] hover:border-[#4580BC]/30"
 												}
 											`}
 										>
@@ -182,8 +182,8 @@ export default function DashboardPage() {
 												flex-1 py-4 px-6 text-center text-sm font-medium transition-colors
 												${
 													activeChartTab === "weekly"
-														? "text-blue-600 border-b-2 border-blue-600"
-														: "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+														? "text-[#4580BC] border-b-2 border-[#4580BC] font-galindo"
+														: "text-gray-500 hover:text-[#4580BC] hover:border-[#4580BC]/30"
 												}
 											`}
 										>
@@ -243,10 +243,10 @@ export default function DashboardPage() {
 					<div className="grid md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
 						<Link
 							href="/picks/current"
-							className="bg-white rounded-lg shadow p-6 border border-gray-200 hover:shadow-md transition-shadow"
+							className="bg-white rounded-lg shadow p-6 border border-gray-200  hover:shadow-md transition-all"
 						>
 							<div className="text-center">
-								<h3 className="text-lg font-semibold text-gray-900 mb-2">
+								<h3 className="text-lg font-galindo text-white mb-2">
 									My Picks
 								</h3>
 								<p className="text-sm text-gray-600">
@@ -257,10 +257,10 @@ export default function DashboardPage() {
 
 						<Link
 							href="/leaderboard/standings"
-							className="bg-white rounded-lg shadow p-6 border border-gray-200 hover:shadow-md transition-shadow"
+							className="bg-white rounded-lg shadow p-6 border border-gray-200  hover:shadow-md transition-all"
 						>
 							<div className="text-center">
-								<h3 className="text-lg font-semibold text-gray-900 mb-2">
+								<h3 className="text-lg font-galindo text-white mb-2">
 									Leaderboard
 								</h3>
 								<p className="text-sm text-gray-600">

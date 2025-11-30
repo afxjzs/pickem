@@ -107,7 +107,7 @@ export default function NextGameCountdown({
 	if (nextGames.length === 0) {
 		return (
 			<div className="bg-white rounded-lg shadow p-4 md:p-6 border border-gray-200">
-				<h3 className="text-sm md:text-base font-semibold text-gray-900 mb-2">
+				<h3 className="text-sm md:text-base font-galindo text-[#265387] mb-2">
 					Next Game(s)
 				</h3>
 				<p className="text-sm text-gray-600">No upcoming games scheduled</p>
@@ -127,12 +127,12 @@ export default function NextGameCountdown({
 
 	return (
 		<div className="bg-white rounded-lg shadow p-4 md:p-6 border border-gray-200">
-			<h3 className="text-sm md:text-base font-semibold text-gray-900 mb-2">
+			<h3 className="text-sm md:text-base font-galindo text-[#265387] mb-2">
 				Next Game(s)
 			</h3>
 			<div className="space-y-2">
 				<div>
-					<div className="text-lg md:text-xl font-bold text-blue-600 mb-1">
+					<div className="text-lg md:text-xl font-bold text-[#E9932D] mb-1">
 						{countdown || "Calculating..."}
 					</div>
 					<div className="text-xs md:text-sm text-gray-600">

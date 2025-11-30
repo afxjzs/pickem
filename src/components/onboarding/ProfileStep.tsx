@@ -147,7 +147,7 @@ export function ProfileStep({ onNext, initialData }: ProfileStepProps) {
 	return (
 		<form onSubmit={handleSubmit} className="space-y-6">
 			<div>
-				<h2 className="text-2xl font-bold text-gray-900 mb-2">
+				<h2 className="text-2xl font-galindo text-[#265387] mb-2">
 					Create Your Profile
 				</h2>
 				<p className="text-gray-600">
@@ -169,7 +169,7 @@ export function ProfileStep({ onNext, initialData }: ProfileStepProps) {
 						required
 						value={firstName}
 						onChange={(e) => setFirstName(e.target.value)}
-						className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+						className="w-full px-3 py-2 border-2 border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-[#4580BC] focus:border-[#4580BC]"
 						placeholder="Tom"
 					/>
 				</div>
@@ -187,7 +187,7 @@ export function ProfileStep({ onNext, initialData }: ProfileStepProps) {
 						required
 						value={lastName}
 						onChange={(e) => setLastName(e.target.value)}
-						className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+						className="w-full px-3 py-2 border-2 border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-[#4580BC] focus:border-[#4580BC]"
 						placeholder="Brady"
 					/>
 				</div>
@@ -205,7 +205,7 @@ export function ProfileStep({ onNext, initialData }: ProfileStepProps) {
 						required
 						value={username}
 						onChange={(e) => setUsername(e.target.value.toLowerCase())}
-						className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+						className="w-full px-3 py-2 border-2 border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-[#4580BC] focus:border-[#4580BC]"
 						placeholder="the_goat"
 					/>
 					{isCheckingUsername && (
@@ -237,7 +237,7 @@ export function ProfileStep({ onNext, initialData }: ProfileStepProps) {
 						type="url"
 						value={avatarUrl}
 						onChange={(e) => setAvatarUrl(e.target.value)}
-						className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+						className="w-full px-3 py-2 border-2 border-gray-300 rounded-md shadow-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-[#4580BC] focus:border-[#4580BC]"
 						placeholder="https://example.com/avatar.jpg"
 					/>
 					<p className="mt-1 text-sm text-gray-600">
@@ -250,7 +250,7 @@ export function ProfileStep({ onNext, initialData }: ProfileStepProps) {
 				<button
 					type="submit"
 					disabled={!isFormValid}
-					className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+					className="px-6 py-2 bg-[#4580BC] text-white rounded-md hover:bg-[#265387] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4580BC] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 				>
 					Continue
 				</button>

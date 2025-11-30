@@ -11,15 +11,15 @@ export function PaymentStep({ onSkip, onComplete }: PaymentStepProps) {
 	return (
 		<div className="space-y-6">
 			<div>
-				<h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Setup</h2>
+				<h2 className="text-2xl font-galindo text-[#265387] mb-2">Payment Setup</h2>
 				<p className="text-gray-600">Connect your payment method to participate in paid leagues</p>
 			</div>
 
 			<div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
 				<div className="text-center">
-					<div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+					<div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-[#4580BC]/10 mb-4">
 						<svg
-							className="h-6 w-6 text-blue-600"
+							className="h-6 w-6 text-[#4580BC]"
 							fill="none"
 							viewBox="0 0 24 24"
 							stroke="currentColor"
@@ -51,14 +51,14 @@ export function PaymentStep({ onSkip, onComplete }: PaymentStepProps) {
 				<button
 					type="button"
 					onClick={onSkip}
-					className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+					className="px-6 py-2 border-2 border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4580BC]"
 				>
 					Skip for now
 				</button>
 				<button
 					type="button"
 					onClick={onComplete}
-					className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+					className="px-6 py-2 bg-[#4580BC] text-white rounded-md hover:bg-[#265387] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4580BC] transition-colors"
 				>
 					Complete Setup
 				</button>

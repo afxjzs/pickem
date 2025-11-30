@@ -3,6 +3,15 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  
+  /* PickMonster Brand Colors */
+  --color-steel-blue: #4580BC;
+  --color-dusk-blue: #265387;
+  --color-carrot-orange: #E9932D;
+  --color-dark-amaranth: #7D1D3F;
+  --color-beige: #F2F3D9;
+  --color-success-green: #10B981;
+  --color-error-red: #EF4444;
 }
 
 @theme inline {
@@ -10,17 +19,36 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-galindo: 'Galindo', cursive;
+  
+  /* Brand Colors */
+  --color-brand-steel-blue: var(--color-steel-blue);
+  --color-brand-dusk-blue: var(--color-dusk-blue);
+  --color-brand-carrot-orange: var(--color-carrot-orange);
+  --color-brand-dark-amaranth: var(--color-dark-amaranth);
+  --color-brand-beige: var(--color-beige);
+  --color-brand-success: var(--color-success-green);
+  --color-brand-error: var(--color-error-red);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #4580BC;
+    --foreground: #171717;
   }
 }
 
 body {
-  background: var(--background);
+  background: #4580BC !important;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+html {
+  background: #4580BC !important;
+}
+
+/* Galindo font utility class */
+.font-galindo {
+  font-family: 'Galindo', cursive;
 }

@@ -60,13 +60,13 @@ export default function PerformanceInsights({
 
 	return (
 		<div className="bg-white rounded-lg shadow p-4 md:p-6 border border-gray-200">
-			<h3 className="text-lg font-semibold text-gray-900 mb-4">
+			<h3 className="text-lg font-galindo text-[#265387] mb-4">
 				Performance Insights
 			</h3>
 			<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-				<div className="p-3 bg-blue-50 rounded-lg">
+				<div className="p-3 bg-[#4580BC]/10 rounded-lg border border-[#4580BC]/20">
 					<div className="text-sm text-gray-600 mb-1">Consistency</div>
-					<div className="text-lg font-semibold text-gray-900">
+					<div className="text-lg font-semibold text-[#265387]">
 						{consistencyScore}
 					</div>
 					<div className="text-xs text-gray-500 mt-1">
@@ -74,17 +74,17 @@ export default function PerformanceInsights({
 					</div>
 				</div>
 
-				<div className="p-3 bg-green-50 rounded-lg">
+				<div className="p-3 bg-[#10B981]/10 rounded-lg border border-[#10B981]/20">
 					<div className="text-sm text-gray-600 mb-1">Week Wins</div>
-					<div className="text-lg font-semibold text-gray-900">{weekWins}</div>
+					<div className="text-lg font-semibold text-[#10B981]">{weekWins}</div>
 					<div className="text-xs text-gray-500 mt-1">
 						Weeks with highest score
 					</div>
 				</div>
 
-				<div className="p-3 bg-purple-50 rounded-lg">
+				<div className="p-3 bg-[#265387]/10 rounded-lg border border-[#265387]/20">
 					<div className="text-sm text-gray-600 mb-1">vs Average</div>
-					<div className="text-lg font-semibold text-gray-900 capitalize">
+					<div className="text-lg font-semibold text-[#265387] capitalize">
 						{vsAverage}
 					</div>
 					<div className="text-xs text-gray-500 mt-1">

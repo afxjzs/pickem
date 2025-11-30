@@ -167,7 +167,7 @@ export default function WeeklyPointsChart({
 	if (!chartData || sortedData.length === 0) {
 		return (
 			<div className={cardClasses}>
-				<h3 className="text-lg font-semibold text-gray-900 mb-4">
+				<h3 className="text-lg font-galindo text-[#265387] mb-4">
 					Week-over-Week Points
 				</h3>
 				<div className="text-center py-8 text-gray-500">No data available</div>
@@ -177,7 +177,7 @@ export default function WeeklyPointsChart({
 
 	return (
 		<div className={cardClasses}>
-			<h3 className="text-lg font-semibold text-gray-900 mb-4">
+			<h3 className="text-lg font-galindo text-[#265387] mb-4">
 				Week-over-Week Points
 			</h3>
 			<div style={{ height: "500px", width: "100%", display: "grid", gridTemplateColumns: "1fr auto", gap: "20px" }}>

@@ -133,21 +133,21 @@ function LeaderboardContent() {
 
 	if (authLoading || checkingOnboarding) {
 		return (
-			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
+			<div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#4580BC' }}>
 				<div className="text-center">
-					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-					<p className="mt-4 text-gray-600">Loading...</p>
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
+					<p className="mt-4 text-white">Loading...</p>
 				</div>
 			</div>
 		)
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-50">
+		<div className="min-h-screen" style={{ backgroundColor: '#4580BC' }}>
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
 				{/* Header */}
 				<div className="mb-4 md:mb-6">
-					<h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Leaderboard</h1>
+					<h1 className="text-2xl md:text-3xl font-galindo text-white mb-2">Leaderboard</h1>
 					<p className="text-sm md:text-base text-gray-600">Season {season}</p>
 				</div>
 
@@ -158,7 +158,7 @@ function LeaderboardContent() {
 							onClick={() => setActiveTab("weekly")}
 							className={`py-3 md:py-4 px-1 border-b-2 font-medium text-xs md:text-sm ${
 								activeTab === "weekly"
-									? "border-blue-500 text-blue-600"
+									? "border-[#4580BC] text-[#4580BC]"
 									: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
 							}`}
 						>
@@ -168,7 +168,7 @@ function LeaderboardContent() {
 							onClick={() => setActiveTab("overall")}
 							className={`py-3 md:py-4 px-1 border-b-2 font-medium text-xs md:text-sm ${
 								activeTab === "overall"
-									? "border-blue-500 text-blue-600"
+									? "border-[#4580BC] text-[#4580BC]"
 									: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
 							}`}
 						>
@@ -182,7 +182,7 @@ function LeaderboardContent() {
 					<div className="bg-white rounded-lg shadow overflow-hidden">
 						{loadingWeekly ? (
 							<div className="p-6 md:p-8 text-center">
-								<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+								<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
 								<p className="mt-4 text-sm md:text-base text-gray-600">Loading leaderboard...</p>
 							</div>
 						) : weeklyData && weeklyData.users && weeklyData.users.length > 0 ? (
@@ -215,15 +215,15 @@ function LeaderboardContent() {
 											return (
 												<tr
 													key={userData.user_id}
-													className={isUser ? "bg-yellow-50" : ""}
+													className={isUser ? "bg-[#E9932D]/10" : ""}
 												>
 													<td className={`px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900 sticky left-0 z-10 border-r border-gray-200 ${
-														isUser ? "bg-yellow-50" : "bg-white"
+														isUser ? "bg-[#E9932D]/10" : "bg-white"
 													}`}>
 														{userData.rank}
 													</td>
 													<td className={`px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900 sticky left-12 md:left-16 z-10 border-r border-gray-200 ${
-														isUser ? "bg-yellow-50" : "bg-white"
+														isUser ? "bg-[#E9932D]/10" : "bg-white"
 													}`}>
 														{userData.display_name}
 													</td>
@@ -265,7 +265,7 @@ function LeaderboardContent() {
 					<div className="bg-white rounded-lg shadow overflow-hidden">
 						{loadingOverall ? (
 							<div className="p-6 md:p-8 text-center">
-								<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+								<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
 								<p className="mt-4 text-sm md:text-base text-gray-600">Loading standings...</p>
 							</div>
 						) : overallData && overallData.length > 0 ? (
@@ -305,15 +305,15 @@ function LeaderboardContent() {
 											return (
 												<tr
 													key={standing.user_id}
-													className={isUser ? "bg-yellow-50" : ""}
+													className={isUser ? "bg-[#E9932D]/10" : ""}
 												>
 													<td className={`px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900 sticky left-0 z-10 border-r border-gray-200 ${
-														isUser ? "bg-yellow-50" : "bg-white"
+														isUser ? "bg-[#E9932D]/10" : "bg-white"
 													}`}>
 														{standing.rank}
 													</td>
 													<td className={`px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900 sticky left-12 md:left-16 z-10 border-r border-gray-200 ${
-														isUser ? "bg-yellow-50" : "bg-white"
+														isUser ? "bg-[#E9932D]/10" : "bg-white"
 													}`}>
 														{standing.display_name}
 													</td>
@@ -359,7 +359,7 @@ export default function LeaderboardPage() {
 		<Suspense fallback={
 			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
 				<div className="text-center">
-					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
 					<p className="mt-4 text-gray-600">Loading...</p>
 				</div>
 			</div>

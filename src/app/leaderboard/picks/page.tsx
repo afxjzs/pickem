@@ -99,17 +99,17 @@ function GroupPicksContent() {
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-50">
+		<div className="min-h-screen" style={{ backgroundColor: '#4580BC' }}>
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 				{/* Header */}
 				<div className="mb-6 flex justify-between items-center">
 					<div>
-						<h1 className="text-3xl font-bold text-gray-900 mb-2">Group Picks</h1>
+						<h1 className="text-3xl font-galindo text-white mb-2">Group Picks</h1>
 						<p className="text-gray-600">Season {season}</p>
 					</div>
 					<Link
 						href="/leaderboard"
-						className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+						className="bg-[#4580BC] hover:bg-[#265387] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
 					>
 						View Leaderboard
 					</Link>
@@ -125,8 +125,8 @@ function GroupPicksContent() {
 								onClick={() => handleWeekChange(weekNum)}
 								className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
 									week === weekNum
-										? "bg-blue-600 text-white"
-										: "bg-gray-100 text-gray-700 hover:bg-gray-200"
+										? "bg-[#4580BC] text-white"
+										: "bg-white/80 text-gray-700 hover:bg-white"
 								}`}
 							>
 								{weekNum}
@@ -138,7 +138,7 @@ function GroupPicksContent() {
 				{/* Group Picks Table */}
 				{loading ? (
 					<div className="bg-white rounded-lg shadow p-8 text-center">
-						<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+						<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
 						<p className="mt-4 text-gray-600">Loading picks...</p>
 					</div>
 				) : data && data.games.length > 0 ? (
@@ -366,10 +366,10 @@ function GroupPicksContent() {
 export default function GroupPicksPage() {
 	return (
 		<Suspense fallback={
-			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
+			<div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#4580BC' }}>
 				<div className="text-center">
-					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-					<p className="mt-4 text-gray-600">Loading...</p>
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
+					<p className="mt-4 text-white">Loading...</p>
 				</div>
 			</div>
 		}>

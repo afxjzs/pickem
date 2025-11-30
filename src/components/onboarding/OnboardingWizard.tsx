@@ -86,7 +86,7 @@ export function OnboardingWizard() {
 	const currentStepIndex = steps.findIndex((s) => s.key === currentStep)
 
 	return (
-		<div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+		<div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: '#4580BC' }}>
 			<div className="max-w-2xl mx-auto">
 				{/* Progress indicator */}
 				<div className="mb-8">
@@ -97,8 +97,8 @@ export function OnboardingWizard() {
 									<div
 										className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
 											index <= currentStepIndex
-												? "bg-blue-600 border-blue-600 text-white"
-												: "border-gray-300 text-gray-500"
+												? "bg-[#4580BC] border-[#4580BC] text-white"
+												: "border-white/50 text-white/70 bg-white/10"
 										}`}
 									>
 										{index < currentStepIndex ? (
@@ -119,7 +119,7 @@ export function OnboardingWizard() {
 									</div>
 									<span
 										className={`ml-2 text-sm font-medium ${
-											index <= currentStepIndex ? "text-blue-600" : "text-gray-500"
+											index <= currentStepIndex ? "text-white" : "text-white/70"
 										}`}
 									>
 										{step.label}
@@ -128,7 +128,7 @@ export function OnboardingWizard() {
 								{index < steps.length - 1 && (
 									<div
 										className={`flex-1 h-0.5 mx-4 ${
-											index < currentStepIndex ? "bg-blue-600" : "bg-gray-300"
+											index < currentStepIndex ? "bg-white" : "bg-white/30"
 										}`}
 									/>
 								)}
@@ -138,10 +138,10 @@ export function OnboardingWizard() {
 				</div>
 
 				{/* Step content */}
-				<div className="bg-white rounded-lg shadow-sm p-8">
+				<div className="bg-white rounded-lg shadow-lg p-8">
 					{error && (
-						<div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
-							<div className="text-sm text-red-600">{error}</div>
+						<div className="mb-6 bg-[#EF4444]/10 border-2 border-[#EF4444] rounded-md p-4">
+							<div className="text-sm text-[#EF4444]">{error}</div>
 						</div>
 					)}
 
