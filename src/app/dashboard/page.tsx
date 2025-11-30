@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { useAuth } from "@/lib/contexts/AuthContext"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -239,36 +238,6 @@ export default function DashboardPage() {
 						</div>
 					)}
 
-					{/* Quick Links */}
-					<div className="grid md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
-						<Link
-							href="/picks/current"
-							className="bg-white rounded-lg shadow p-6 border border-gray-200  hover:shadow-md transition-all"
-						>
-							<div className="text-center">
-								<h3 className="text-lg font-galindo text-white mb-2">
-									My Picks
-								</h3>
-								<p className="text-sm text-gray-600">
-									Make weekly NFL picks with confidence points
-								</p>
-							</div>
-						</Link>
-
-						<Link
-							href="/leaderboard/standings"
-							className="bg-white rounded-lg shadow p-6 border border-gray-200  hover:shadow-md transition-all"
-						>
-							<div className="text-center">
-								<h3 className="text-lg font-galindo text-white mb-2">
-									Leaderboard
-								</h3>
-								<p className="text-sm text-gray-600">
-									View standings and track your performance
-								</p>
-							</div>
-						</Link>
-					</div>
 				</div>
 			</main>
 		</div>
