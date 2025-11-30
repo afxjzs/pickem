@@ -14,7 +14,7 @@ ON pickem.picks(user_id, game_id);
 CREATE INDEX IF NOT EXISTS idx_picks_user_id 
 ON pickem.picks(user_id);
 
--- Indexes for games table
+-- Indexes for games table. All of these indexes are used in the my picks page.
 -- Composite index for filtering by season, week, and status
 CREATE INDEX IF NOT EXISTS idx_games_season_week_status 
 ON pickem.games(season, week, status);
