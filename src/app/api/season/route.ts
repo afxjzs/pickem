@@ -2,6 +2,9 @@ import { NextRequest } from "next/server"
 import { getCurrentWeekFromDatabase } from "@/lib/utils/database"
 import { createSuccessResponse, handleAPIError } from "@/lib/api/utils"
 
+// Route segment config for caching
+export const revalidate = 3600 // 1 hour
+
 export async function GET(request: NextRequest) {
 	try {
 		const { searchParams } = new URL(request.url)

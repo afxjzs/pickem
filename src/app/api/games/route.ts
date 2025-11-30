@@ -8,6 +8,9 @@ import {
 	isValidTeamAbbreviation,
 } from "@/lib/api/utils"
 
+// Route segment config for caching
+export const revalidate = 300 // 5 minutes default
+
 export async function GET(request: NextRequest) {
 	try {
 		// Get query parameters
@@ -35,12 +38,12 @@ export async function GET(request: NextRequest) {
 			)
 		}
 
-		// Check if week is completed before syncing (completed weeks don't need syncing)
-		let shouldSyncGames = true
-		let shouldSyncOdds = false
-
+		// Fetch games from database first (return immediately)
+		const supabase = await createClient()
+		
+		// Check if week is completed (completed weeks don't need syncing)
+		let isWeekComplete = false
 		if (weekNumber !== undefined) {
-			const supabase = await createClient()
 			const { data: dbGames } = await supabase
 				.from("games")
 				.select("status, home_score, away_score")
@@ -48,7 +51,7 @@ export async function GET(request: NextRequest) {
 				.eq("week", weekNumber)
 
 			// Check if all games are final with scores (week is complete)
-			const isWeekComplete =
+			isWeekComplete =
 				dbGames &&
 				dbGames.length > 0 &&
 				dbGames.every(
@@ -57,32 +60,38 @@ export async function GET(request: NextRequest) {
 						game.home_score !== null &&
 						game.away_score !== null
 				)
-
-			// Only sync if week is not complete
-			if (isWeekComplete) {
-				shouldSyncGames = false
-				shouldSyncOdds = false
-			} else {
-				shouldSyncOdds = true
-			}
 		}
 
-		// Sync games from ESPN API to database (with smart caching)
-		// This will only sync if data is stale or first time, and week is not complete
-		if (shouldSyncGames) {
-			await dataSync.syncGames(parseInt(season), weekNumber)
+		// Trigger background sync check (don't await - non-blocking)
+		// Only sync if week is not complete and cron hasn't run recently
+		if (!isWeekComplete && weekNumber !== undefined) {
+			// Trigger background sync asynchronously
+			// Use the same origin as the current request
+			const url = new URL(request.url)
+			const syncUrl = `${url.origin}/api/sync/games`
+			fetch(syncUrl, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					season,
+					week: weekNumber,
+					syncScores: true,
+					syncSchedules: true,
+					syncOdds: false, // Odds have separate cron job
+				}),
+			}).catch((error) => {
+				// Silently fail - background sync shouldn't block the response
+				console.error("Background sync failed (non-fatal):", error)
+			})
 		}
 
-		// Sync odds separately - only if week is not complete
-		if (shouldSyncOdds && weekNumber !== undefined) {
-			await dataSync.syncGameOdds(parseInt(season), weekNumber)
-		}
-
-		// Also sync teams to ensure we have the latest team data
+		// Also sync teams to ensure we have the latest team data (this is fast, so we can await it)
 		const teams = await dataSync.syncTeams()
 
 		// Fetch games from database (they now have UUIDs)
-		const supabase = await createClient()
+		// Use the supabase client we already created
 		let query = supabase.from("games").select("*").eq("season", season)
 
 		if (weekNumber) {

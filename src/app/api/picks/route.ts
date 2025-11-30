@@ -7,6 +7,9 @@ import {
   parseQueryParams,
 } from "@/lib/api/utils"
 
+// Route segment config for caching
+export const revalidate = 60 // 1 minute
+
 // Helper function to load a game by UUID or espn_id
 async function loadGame(supabase: any, gameId: string) {
   // Check if gameId is a UUID format
@@ -67,9 +70,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch picks for this user, week, season
+    // Only select needed fields for better performance
     const { data, error } = await supabase
       .from("picks")
-      .select(`*, games!inner(week, season)`) // join to filter by week/season
+      .select(`id, game_id, picked_team, confidence_points, created_at, updated_at, games!inner(week, season)`) // join to filter by week/season, only select needed fields
       .eq("user_id", user.id)
       .eq("games.week", week)
 
