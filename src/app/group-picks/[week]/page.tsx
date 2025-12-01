@@ -26,6 +26,7 @@ export default function GroupPicksPage() {
 	const [season, setSeason] = useState("2025")
 	const [groupPicksWeek, setGroupPicksWeek] = useState<number | null>(null)
 	const [currentWeek, setCurrentWeek] = useState<number | null>(null)
+	const [syncing, setSyncing] = useState(false) // Track manual sync state
 
 	// Store user ID in state to persist across re-renders
 	const [userId, setUserId] = useState<string | null>(null)
@@ -205,6 +206,37 @@ export default function GroupPicksPage() {
 		setLoadingGroupPicks(true)
 	}
 
+	const handleManualSync = async () => {
+		if (groupPicksWeek === null || syncing) return
+
+		setSyncing(true)
+		try {
+			const response = await fetch("/api/sync/manual", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					season,
+					week: groupPicksWeek,
+				}),
+			})
+
+			const data = await response.json()
+
+			if (data.success) {
+				// Refresh group picks after a short delay
+				setTimeout(() => {
+					fetchGroupPicks()
+				}, 2000)
+			}
+		} catch (error) {
+			console.error("Error triggering manual sync:", error)
+		} finally {
+			setSyncing(false)
+		}
+	}
+
 	const isCurrentUser = (checkUserId: string) => {
 		// Use both current user state and stored userId to handle intermittent auth state
 		return user?.id === checkUserId || userId === checkUserId
@@ -245,25 +277,75 @@ export default function GroupPicksPage() {
 						Season {season}
 					</p>
 
-					{/* Week Selector */}
+					{/* Week Selector and Sync Button */}
 					<div className="mb-4 md:mb-6 bg-white rounded-lg shadow p-3 md:p-4">
-						<div className="flex flex-wrap gap-1.5 md:gap-2">
-							<span className="text-xs md:text-sm font-medium text-gray-700 mr-2">
-								Week:
-							</span>
-							{allWeeks.map((weekNum) => (
-								<button
-									key={weekNum}
-									onClick={() => handleGroupPicksWeekChange(weekNum)}
-									className={`px-2 md:px-3 py-1 rounded-md text-xs md:text-sm font-medium transition-colors ${
-										groupPicksWeek === weekNum
-											? "bg-[#4580BC] text-white"
-											: "bg-white/80 text-gray-700 hover:bg-white"
-									}`}
-								>
-									{weekNum}
-								</button>
-							))}
+						<div className="flex flex-wrap gap-3 md:gap-4 items-center">
+							<div className="flex flex-wrap gap-1.5 md:gap-2 flex-1">
+								<span className="text-xs md:text-sm font-medium text-gray-700 mr-2">
+									Week:
+								</span>
+								{allWeeks.map((weekNum) => (
+									<button
+										key={weekNum}
+										onClick={() => handleGroupPicksWeekChange(weekNum)}
+										className={`px-2 md:px-3 py-1 rounded-md text-xs md:text-sm font-medium transition-colors ${
+											groupPicksWeek === weekNum
+												? "bg-[#4580BC] text-white"
+												: "bg-white/80 text-gray-700 hover:bg-white"
+										}`}
+									>
+										{weekNum}
+									</button>
+								))}
+							</div>
+							<button
+								onClick={handleManualSync}
+								disabled={syncing || groupPicksWeek === null}
+								className="px-3 md:px-4 py-2 bg-[#4580BC] text-white rounded-md hover:bg-[#3a6fa3] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-xs md:text-sm font-medium flex items-center gap-2 whitespace-nowrap"
+							>
+								{syncing ? (
+									<>
+										<svg
+											className="animate-spin h-4 w-4"
+											xmlns="http://www.w3.org/2000/svg"
+											fill="none"
+											viewBox="0 0 24 24"
+										>
+											<circle
+												className="opacity-25"
+												cx="12"
+												cy="12"
+												r="10"
+												stroke="currentColor"
+												strokeWidth="4"
+											></circle>
+											<path
+												className="opacity-75"
+												fill="currentColor"
+												d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+											></path>
+										</svg>
+										Syncing...
+									</>
+								) : (
+									<>
+										<svg
+											className="h-4 w-4"
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+										>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												strokeWidth={2}
+												d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+											/>
+										</svg>
+										Sync Data
+									</>
+								)}
+							</button>
 						</div>
 					</div>
 				</div>

@@ -48,6 +48,7 @@ function PicksPageContent() {
 		new Map()
 	)
 	const [teamsLoaded, setTeamsLoaded] = useState(false) // Track if teams have been loaded
+	const [syncing, setSyncing] = useState(false) // Track manual sync state
 
 	// Available confidence points (1-16)
 	const confidencePoints = Array.from({ length: 16 }, (_, i) => i + 1)
@@ -474,6 +475,56 @@ function PicksPageContent() {
 			}
 		} catch (error) {
 			console.error("Error fetching user picks:", error)
+		}
+	}
+
+	const handleManualSync = async () => {
+		if (week === null || syncing) return
+
+		setSyncing(true)
+		try {
+			const response = await fetch("/api/sync/manual", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					season,
+					week,
+				}),
+			})
+
+			const data = await response.json()
+
+			if (data.success) {
+				setMessage({
+					text: "Sync initiated! Refreshing data...",
+					type: "info",
+				})
+
+				// Refresh games and picks after a short delay
+				setTimeout(() => {
+					fetchGames()
+					fetchUserPicks()
+					setMessage({
+						text: "Data refreshed successfully!",
+						type: "success",
+					})
+				}, 2000)
+			} else {
+				setMessage({
+					text: `Sync failed: ${data.error || "Unknown error"}`,
+					type: "error",
+				})
+			}
+		} catch (error) {
+			console.error("Error triggering manual sync:", error)
+			setMessage({
+				text: "Failed to trigger sync. Please try again.",
+				type: "error",
+			})
+		} finally {
+			setSyncing(false)
 		}
 	}
 
@@ -1023,8 +1074,8 @@ function PicksPageContent() {
 						)
 					})()}
 
-					{/* Controls - Mobile optimized - Only Week selector */}
-					<div className="flex flex-wrap gap-3 md:gap-4 items-center mb-4 md:mb-6">
+					{/* Controls - Mobile optimized - Week selector and Sync button */}
+					<div className="flex flex-wrap gap-3 md:gap-4 items-end mb-4 md:mb-6">
 						<div className="flex-1 min-w-[120px]">
 							<label
 								htmlFor="week"
@@ -1053,6 +1104,54 @@ function PicksPageContent() {
 								))}
 							</select>
 						</div>
+						<button
+							onClick={handleManualSync}
+							disabled={syncing || week === null}
+							className="px-4 py-2 bg-[#4580BC] text-white rounded-md hover:bg-[#3a6fa3] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm md:text-base font-medium flex items-center gap-2"
+						>
+							{syncing ? (
+								<>
+									<svg
+										className="animate-spin h-4 w-4"
+										xmlns="http://www.w3.org/2000/svg"
+										fill="none"
+										viewBox="0 0 24 24"
+									>
+										<circle
+											className="opacity-25"
+											cx="12"
+											cy="12"
+											r="10"
+											stroke="currentColor"
+											strokeWidth="4"
+										></circle>
+										<path
+											className="opacity-75"
+											fill="currentColor"
+											d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+										></path>
+									</svg>
+									Syncing...
+								</>
+							) : (
+								<>
+									<svg
+										className="h-4 w-4"
+										fill="none"
+										stroke="currentColor"
+										viewBox="0 0 24 24"
+									>
+										<path
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											strokeWidth={2}
+											d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+										/>
+									</svg>
+									Sync Data
+								</>
+							)}
+						</button>
 					</div>
 
 					{/* Message */}

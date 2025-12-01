@@ -7,15 +7,11 @@
 	"crons": [
 		{
 			"path": "/api/cron/sync-scores",
-			"schedule": "*/5 * * * *"
+			"schedule": "0 1 * * *"
 		},
 		{
 			"path": "/api/cron/sync-schedules",
 			"schedule": "0 0 * * 0"
-		},
-		{
-			"path": "/api/cron/sync-odds",
-			"schedule": "0 * * * *"
 		}
 	]
 }

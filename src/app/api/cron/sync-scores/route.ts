@@ -1,7 +1,6 @@
 // src/app/api/cron/sync-scores/route.ts
-// Cron job: Runs every 5 minutes
-// Checks for active games (live or scheduled within 4 hours)
-// Only syncs if active games exist
+// Cron job: Runs once per day (1 AM)
+// Syncs scores, schedules, and odds for current week
 
 import { NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
@@ -102,7 +101,7 @@ export async function GET(request: NextRequest) {
 				week: currentWeek,
 				syncScores: true,
 				syncSchedules: true, // Also sync schedules to get latest scores
-				syncOdds: false, // Odds have separate cron job
+				syncOdds: true, // Include odds sync in this job
 			}),
 		})
 
