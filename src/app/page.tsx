@@ -31,9 +31,7 @@ export default function Home() {
 								priority
 							/>
 						</div>
-						<h1 className="text-5xl md:text-6xl font-galindo text-[#265387] mb-6">
-							PickMonster
-						</h1>
+
 						<p className="text-xl text-gray-700 mb-8 max-w-2xl mx-auto">
 							Welcome back! You&apos;re signed in and ready to make your picks.
 						</p>
