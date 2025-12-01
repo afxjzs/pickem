@@ -5,6 +5,9 @@ import { NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { createSuccessResponse, handleAPIError } from "@/lib/api/utils"
 
+// Route segment config - this route uses request.url
+export const dynamic = 'force-dynamic'
+
 export interface WeeklyPerformanceUser {
 	user_id: string
 	display_name: string

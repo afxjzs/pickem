@@ -6,6 +6,9 @@ import {
 	isValidConference,
 } from "@/lib/api/utils"
 
+// Route segment config - this route uses request.url
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
 	try {
 		// Get query parameters

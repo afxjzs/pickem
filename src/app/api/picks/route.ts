@@ -9,6 +9,7 @@ import {
 
 // Route segment config for caching
 export const revalidate = 60 // 1 minute
+export const dynamic = 'force-dynamic' // This route uses request.url
 
 // Helper function to load a game by UUID or espn_id
 async function loadGame(supabase: any, gameId: string) {

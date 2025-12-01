@@ -4,6 +4,9 @@ import { createClient } from "@/lib/supabase/server"
 import { createSuccessResponse, handleAPIError } from "@/lib/api/utils"
 import { Score, WeekStanding, SeasonStanding } from "@/lib/types/database"
 
+// Route segment config - this route uses request.url
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
 	try {
 		// Use service role key for scores (public leaderboard data, bypasses RLS)

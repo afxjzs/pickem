@@ -4,6 +4,7 @@ import { createSuccessResponse, handleAPIError } from "@/lib/api/utils"
 
 // Route segment config for caching
 export const revalidate = 3600 // 1 hour
+export const dynamic = 'force-dynamic' // This route is dynamic
 
 export async function GET(request: NextRequest) {
 	try {

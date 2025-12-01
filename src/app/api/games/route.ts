@@ -10,6 +10,7 @@ import {
 
 // Route segment config for caching
 export const revalidate = 300 // 5 minutes default
+export const dynamic = 'force-dynamic' // This route uses request.url
 
 export async function GET(request: NextRequest) {
 	try {

@@ -9,6 +9,9 @@ import type { Game, Pick, Team } from "@/lib/types/database"
 import { calculateWeeklyScore } from "@/lib/utils/scoring"
 import { createHash } from "crypto"
 
+// Route segment config - this route is always dynamic
+export const dynamic = 'force-dynamic'
+
 /**
  * Batch recalculate scores for all users for a specific week
  * Much faster than sequential recalculation

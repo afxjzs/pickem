@@ -2,6 +2,9 @@ import { NextRequest } from "next/server"
 import { dataSync } from "@/lib/api/sync"
 import { createSuccessResponse, handleAPIError, isValidConference, isValidDivision } from "@/lib/api/utils"
 
+// Route segment config - this route uses request.url
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
 	try {
 		// Get query parameters
